@@ -777,17 +777,19 @@ class gui:
    
     def drawSoundEditDisplay(self,applicationFormat,application):
 
-        editSoundsFrame=tkinter.Frame(self.window,width=300,height=100,bg = 'white',bd = 0)
-
+        # 画面全体を形作るフレームを作成
+        editSoundsFrame=tkinter.Frame(self.window,width=300,height=100,bg = 'gray',bd = 0)
 
         # フレームを横幅いっぱいまで広げて配置
         editSoundsFrame.grid(row=0,column=0,sticky="nsew",rowspan=2,columnspan=2)  
         editSoundsFrame.grid_columnconfigure(1, weight=1)
 
+        # ウィジェットの自動調整を解除
+        editSoundsFrame.grid_propagate(False)
+
         # 何も読み込まれていないで最初にこの画面を表示する為の処理
         if hasattr(applicationFormat,'modelDisplayPermitation') == False:
              
-            print("pointB")
             #初めてなので強制的に音源表示の許可を出すように設定する
             setattr(applicationFormat,'modelDisplayPermitation',True)
 
@@ -801,22 +803,26 @@ class gui:
             # wavファイルが何も読み込まれていない時
             # テキストラベルの作成
             setWavLabel = tkinter.Label(editSoundsFrame,text="wavファイルが入ったフォルダを指定してください。")
-            setWavLabel.grid(row = 0,column =0 ,sticky = tkinter.W)
+            setWavLabel.grid(row = 0,column =0 )
 
               # 基本設定部の記述
-            menus = tkinter.Frame(editSoundsFrame,width=800,height=120,bg = 'gray8',bd = 0)
+            menus = tkinter.Frame(editSoundsFrame,width=800,height=140,bg = 'gray8',bd = 0)
 
-            menus.propagate(False)
+
+            menus.grid_propagate(False)
            
             # 諸設定を包むフレームを画面いっぱいに表示
-            menus.grid(row=0,column=0,columnspan="2",sticky="nsew")
+            menus.grid(row=0,column=0,columnspan="2",sticky=tkinter.W+tkinter.E)
 
 
             # 基本設定部の記述
-            extraSettingFrame=tkinter.Frame(menus,width=300,height=100,bg = 'red',bd = 0)
+            extraSettingFrame=tkinter.Frame(menus,width=400,height=140,bg = 'red',bd = 0)
+
+            # フレームサイズの自動調整を無効化する
+            extraSettingFrame.grid_propagate(False)
 
             # 諸設定を包むフレームを画面いっぱいに表示
-            extraSettingFrame.grid(row=0,column=0,sticky="nsew")
+            extraSettingFrame.grid(row=0,column=0,sticky=tkinter.W+tkinter.E)
 
             # 操作カテゴリを示すラベルの作成
             label12 = tkinter.Label(extraSettingFrame,text="基本設定")
@@ -875,36 +881,45 @@ class gui:
 
 
             # 録音部の記述
-            RecordingFrame=tkinter.Frame(menus,width=100,height=100,bg = 'purple',bd = 0)
+            RecordingFrame=tkinter.Frame(menus,width=180,height=140,bg = 'purple',bd = 0)
 
+            
+            # フレームサイズの自動調整を無効化する
+            RecordingFrame.grid_propagate(False)
+            
             # フレームを画面いっぱいに表示
-            RecordingFrame.grid(row = 0,column = 1,sticky= tkinter.W)
-            '''
+            RecordingFrame.grid(row = 0,column = 1)
+
+
             # 録音カテゴリを示すラベルの作成
             recordingLabel = tkinter.Label(RecordingFrame,text="録音")
             recordingLabel.grid(row = 0,column = 0,columnspan = 2)
-
+            
+            
             # 発音名を示すラベルの作成
             recordingLabel = tkinter.Label(RecordingFrame,text="発音")
-            recordingLabel.grid(row = 1,column = 0)
+            recordingLabel.grid(row = 1,column = 0,sticky= tkinter.E)
 
             # 発音名のテキスト入力
             RecordingName = tkinter.Entry(RecordingFrame,width=20)
             RecordingName.grid(row = 1,column =1 ,sticky= tkinter.E)
 
-             #録音ボタンを定義
+            #録音ボタンを定義
             recordingButton= tkinter.Button(RecordingFrame,text ="●",width=8,height=3,command =lambda:application.recordSound(applicationData,preprocessFrame))
 
             # 録音ボタンを設置
-            recordingButton.grid(row=2,column=0,columnspan = 2)
+            recordingButton.grid(row=2,column=0,columnspan = 2,sticky= tkinter.W+tkinter.E)
 
 
-            '''
+            
             # 前処理部の記述
-            preprocessFrame=tkinter.Frame(menus,width=200,height=100,bg = 'orange',bd = 0)
+            preprocessFrame=tkinter.Frame(menus,width=200,height=140,bg = 'orange',bd = 0)
+
+            # フレームサイズの自動調整を無効化する
+            preprocessFrame.grid_propagate(False)
 
             # フレームを表示
-            preprocessFrame.grid(row = 0,column = 2,sticky=tkinter.W)
+            preprocessFrame.grid(row = 0,column = 2)
            
             # 操作カテゴリを示すラベルの作成
             preprocessLabel = tkinter.Label(preprocessFrame,text="前処理")
@@ -912,21 +927,24 @@ class gui:
 
 
             # 抽出音素とファイル名の比較ボタンを定義
-            loadFolderButton= tkinter.Button(preprocessLabel,text ="検出音素と実発音が違うデータを削除",width=10,height=2)
+            loadFolderButton= tkinter.Button(preprocessLabel,text ="検出音素と実発音が違うデータを削除",width=25,height=2)
 
             # 抽出音素とファイル名の比較ボタンを設置
             loadFolderButton.grid(row=1,column=0)
 
 
             # 学習部の記述
-            learningFrame=tkinter.Frame(menus,width=200,height=100,bg = 'black',bd = 0)
+            learningFrame=tkinter.Frame(menus,width=200,height=140,bg = 'black',bd = 0)
+
+            # 自動調節をオフに
+            learningFrame.grid_propagate(False)
 
             # 操作カテゴリを示すラベルの作成
             learningLabel = tkinter.Label(learningFrame,text="学習")
             learningLabel.grid(row = 0,column = 0)
 
             # フレームを画面いっぱいに表示
-            learningFrame.grid(row = 0,column = 3,sticky="nsew")
+            learningFrame.grid(row = 0,column = 3)
 
             # モデルの学習ボタンを作成
             modelLearnButton= tkinter.Button(learningFrame,text ="モデルの学習",width=10,height=3)
@@ -935,13 +953,16 @@ class gui:
             modelLearnButton.grid(row=1,column=0)
 
             # モデルの書き出し部の記述
-            exportLabel=tkinter.Frame(menus,width=200,height=100,bg = 'red',bd = 0)
+            exportLabel=tkinter.Frame(menus,width=200,height=140,bg = 'red',bd = 0)
 
+            # 自動配置をオフに
+            exportLabel.grid_propagate()
             # モデル書き出し部の配置
             exportLabel.grid(row = 0,column = 4)
 
              # 操作カテゴリを示すラベルの作成(モデル書き出し)
             expoteModel = tkinter.Label(exportLabel,text="モデル書き出し")
+            expoteModel.grid_propagate(False)
             expoteModel.grid(row = 0,column = 0)
 
             # モデルの学習ボタンを作成
@@ -950,15 +971,48 @@ class gui:
             # モデル学習ボタンの配置
             export.grid(row=1,column=0)
 
+            # 背景用のフレームを作成
+            dataFrame = tkinter.Frame(editSoundsFrame,width=1000,height=1000,bg='white')
+            
+            # フレームの自動調整機能をオフにする
+            dataFrame.grid_propagate(False)
 
-            dataFrame = tkinter.Frame(menus,width=1000,height=800,bg='purple')
-           
-            # データテーブルを生成表示
-            dataTable = application.loadDataTable(editSoundsFrame)
+            # 背景用のフレームを表示
+            dataFrame.grid(row=1,column=0,columnspan=2)
+            
 
-            dataTable.grid(row=1,column=0,columnspan=4)
+            #スクロール用キャンバスを作成
+            tableCanvas = tkinter.Canvas(dataFrame,bg = 'red',width=975,height=800,scrollregion=(0,0,1000,2000))
+            
+            # キャンバスのサイズの自動調整機能のオフ
+            tableCanvas.grid_propagate(False)
+
+            # スクロールするキャンバスを配置
+            tableCanvas.grid(row=0,column=0)
+            #frame = tkinter.Frame(tableCanvas)
+
+            # 垂直のスクロールバーを作成
+            vsb = tkinter.Scrollbar(dataFrame,orient=tkinter.VERTICAL)
+
+            # 垂直スクロールバーの配置
+            vsb.grid(row=0,column=1,sticky=tkinter.N+tkinter.S)
+
+  
+            # 縦スクロールバーの機能を書く
+            tableCanvas.configure(yscrollcommand=vsb.set)
 
 
+            # キャンバスの中にフレームを置く
+            #tableInnerCanvas = tkinter.Canvas(width=800,height=800,bg = 'yellow')
+
+            # キャンバスサイズ自動調整機能をオフに
+            #tableInnerCanvas.grid_propagate(False)
+
+            # キャンバスの内側にあるフレームの配置
+           # tableInnerCanvas.grid(row=0,column=0)
+
+            # データテーブルと読み込みボタンを生成表示
+            #application.loadDataTable(tableInnerCanvas)
 
         else:
 
@@ -974,13 +1028,13 @@ class gui:
             soundEditFrame = tkinter.Label(index,text="音源クリエーターの意向により内部データを表示しません",font=big)
             soundEditFrame.grid(row = 0,column =0 )
    
-    def loadDataTable(self,editSoundsFrame):
-
-        # 音声解析結果のテーブルを表示
-        dataTable = tkinter.Frame(editSoundsFrame,width=1000,height=1000,bg = 'green')
-        dataTable.propagate(False)
-        dataTable.grid(row=1,column=0,columnspan=3)
+    def loadDataTable(self,dataTable):
         
+        # データテーブルを生成表示
+        #dataTable = application.loadDataTable(editSoundsFrame)
+        dataTable.grid_propagate(False)            
+        dataTable.grid(row=0,column=0,columnspan=4)#ここの４はtodo
+
         # wavデータが０かそれ以外かで条件分岐
         if applicationFormat.totalWavAmount != 0:
 
@@ -991,20 +1045,20 @@ class gui:
                 tableRecord = tkinter.Frame(dataTable,width='1000',height=100,bg = 'yellow',bd = 2)
                
                 # レコードを配置
-                tableRecord.grid(row=index,column=0)
+                tableRecord.grid(row=index + 2,column=0)
 
-                # グラフの描画
+                # グラフの描画 キャンバス
                 graphFrame = application.drawFigAsFrame(applicationFormat,index)
-                #graphFrame.propagate(False)
-                graphFrame.grid(row=0,column=0)
-
+      
+                graphFrame.grid(row=index,column=0)
+               
                 # 録音カテゴリを示すラベルの作成
                 phoneLabel = tkinter.Label(tableRecord,text="音素")
-                phoneLabel.grid(row = 0,column = 1)
+                phoneLabel.grid(row = index + 2,column = 1)
 
-               
+                
                 # 音素についてのループ
-                for phone in numpy.arange(0,int(getattr(applicationFormat,"phones" + str(index))),1):
+                for phone in numpy.arange(0,int(getattr(applicationFormat,"PhonesAlignment" + str(index))[2]),1):
 
  
                     # 音素の名前を取得
@@ -1016,7 +1070,7 @@ class gui:
 
                     # チェックボックスの配置
                     alignment.grid(row = phone + 1,column =1)
-
+                
         else:
 
             # データが読み込まれていない時の処理
@@ -1389,15 +1443,15 @@ class gui:
        
         # matplotlibの描画領域とフレームの関連づけ
         self.canvas = FigureCanvasTkAgg(fig)
-        self.canvas.draw()
-        plt.show()
+        #self.canvas.draw()
+       # plt.show()
        
-        returnData = self.canvas
-        print(returnData)
-        # matplotlibのグラフをキャンバスに配置
-        self.canvas.get_tk_widget().grid()
+        #returnData = self.canvas
 
-        return self.canvas
+        # matplotlibのグラフをキャンバスに配置
+        returnData = self.canvas.get_tk_widget()
+
+        return returnData
        
     def collectData(saveData):
         return saveData
