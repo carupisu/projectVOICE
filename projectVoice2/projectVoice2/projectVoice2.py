@@ -1007,6 +1007,9 @@ class gui:
             tableCanvas.configure(scrollregion=(0,0,1000,2000))
 
             
+
+
+
             # スクロールバーのスライダが動かされた時の実行する処理を設定
             tableCanvas.config(command = tableCanvas.yview)
 
