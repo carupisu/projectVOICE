@@ -36,7 +36,6 @@ import tkinter.ttk as ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pickle
-
 ################################## 定数 #################################
 
 # gui関連
@@ -805,18 +804,18 @@ class gui:
             setWavLabel = tkinter.Label(editSoundsFrame,text="wavファイルが入ったフォルダを指定してください。")
             setWavLabel.grid(row = 0,column =0 )
 
-              # 基本設定部の記述
-            menus = tkinter.Frame(editSoundsFrame,width=800,height=140,bg = 'gray8',bd = 0)
+            # 基本設定部の記述
+            menus = tkinter.Frame(editSoundsFrame,width=1100,height=140,bg = 'gray18',bd = 0)
 
-
+            # 自動サイズ調整機能をオフ
             menus.grid_propagate(False)
            
-            # 諸設定を包むフレームを画面いっぱいに表示
-            menus.grid(row=0,column=0,columnspan="2",sticky=tkinter.W+tkinter.E)
+            # 諸設定を包むフレームを表示
+            menus.grid(row=0,column=0,columnspan="2")
 
 
             # 基本設定部の記述
-            extraSettingFrame=tkinter.Frame(menus,width=400,height=140,bg = 'red',bd = 0)
+            extraSettingFrame=tkinter.Frame(menus,width=400,height=140,bg = 'gray18',bd = 0)
 
             # フレームサイズの自動調整を無効化する
             extraSettingFrame.grid_propagate(False)
@@ -825,11 +824,11 @@ class gui:
             extraSettingFrame.grid(row=0,column=0,sticky=tkinter.W+tkinter.E)
 
             # 操作カテゴリを示すラベルの作成
-            label12 = tkinter.Label(extraSettingFrame,text="基本設定")
+            label12 = tkinter.Label(extraSettingFrame,text="基本設定",bg='gray18',fg='white')
             label12.grid(row = 0,column = 0,columnspan = 3 )
 
             # 制作者名ラベルの作成
-            label13 = tkinter.Label(extraSettingFrame,text="制作者名")
+            label13 = tkinter.Label(extraSettingFrame,text="制作者名",bg='gray18',fg='white')
             label13.grid(row = 1,column = 0 ,sticky = tkinter.E)
 
             # 制作者名のテキスト入力
@@ -837,7 +836,7 @@ class gui:
             createrNameTxt.grid(row = 1,column =1 ,sticky= tkinter.W)
 
             # キャラクタ名ラベルの作成
-            charaNameLabel = tkinter.Label(extraSettingFrame,text="キャラクタ名")
+            charaNameLabel = tkinter.Label(extraSettingFrame,text="キャラクタ名",bg='gray18',fg='white')
             charaNameLabel.grid(row = 2,column =0 ,sticky = tkinter.E)
 
             # キャラクタ名のテキスト入力
@@ -845,7 +844,7 @@ class gui:
             charaName.grid(row = 2,column =1 ,sticky= tkinter.E)
 
             # 利用条件テキストファイルラベルの設定
-            label10 = tkinter.Label(extraSettingFrame,text="利用条件テキストファイル")
+            label10 = tkinter.Label(extraSettingFrame,text="利用条件テキストファイル",bg='gray18',fg='white')
             label10.grid(row = 3,column =0 ,sticky = tkinter.E)
 
             # 利用条件テキストファイルののテキスト入力
@@ -854,7 +853,7 @@ class gui:
 
 
             # readMeテキスト設定のラベルを設定
-            label10 = tkinter.Label(extraSettingFrame,text="ReadMe.txtの設定")
+            label10 = tkinter.Label(extraSettingFrame,text="ReadMe.txtの設定",bg='gray18',fg='white')
             label10.grid(row = 4,column =0 ,sticky = tkinter.E)
 
             # readMeテキスト設定のテキスト入力
@@ -862,7 +861,7 @@ class gui:
             charaName.grid(row = 4,column =1 ,sticky= tkinter.E)
 
             # ユーザー閲覧許可設定のラベル
-            label11 = tkinter.Label(extraSettingFrame,text="使編集画面の閲覧と編集を許可")
+            label11 = tkinter.Label(extraSettingFrame,text="使編集画面の閲覧と編集を許可",bg='gray18',fg='white')
             label11.grid(row = 5,column =0 ,sticky = tkinter.E)
 
             # ラジオボタンが初期設定でオンになっているものを指定する変数を確保
@@ -872,8 +871,8 @@ class gui:
             radioChecked.set(0)
 
             # ラジオボタンの作成
-            permited = tkinter.Radiobutton(extraSettingFrame,value = 0,variable = radioChecked,text="する")
-            notPermited = tkinter.Radiobutton(extraSettingFrame,value = 1,variable = radioChecked,text="しない")
+            permited = tkinter.Radiobutton(extraSettingFrame,value = 0,variable = radioChecked,text="する",bg='gray18',fg='white')
+            notPermited = tkinter.Radiobutton(extraSettingFrame,value = 1,variable = radioChecked,text="しない",bg='gray18',fg='white')
 
             # ラジオボタンの配置
             permited.grid(row = 5,column =1)
@@ -881,7 +880,7 @@ class gui:
 
 
             # 録音部の記述
-            RecordingFrame=tkinter.Frame(menus,width=180,height=140,bg = 'purple',bd = 0)
+            RecordingFrame=tkinter.Frame(menus,width=180,height=140,bg = 'gray18',bd = 0)
 
             
             # フレームサイズの自動調整を無効化する
@@ -892,28 +891,28 @@ class gui:
 
 
             # 録音カテゴリを示すラベルの作成
-            recordingLabel = tkinter.Label(RecordingFrame,text="録音")
+            recordingLabel = tkinter.Label(RecordingFrame,text="録音",bg='gray18',fg='white')
             recordingLabel.grid(row = 0,column = 0,columnspan = 2)
             
             
             # 発音名を示すラベルの作成
-            recordingLabel = tkinter.Label(RecordingFrame,text="発音")
-            recordingLabel.grid(row = 1,column = 0,sticky= tkinter.E)
+            recordingLabel = tkinter.Label(RecordingFrame,text="発音",bg='gray18',fg='white')
+            recordingLabel.grid(row = 1,column = 0)
 
-            # 発音名のテキスト入力
+            # 発音名のテキスト入力部分の作成
             RecordingName = tkinter.Entry(RecordingFrame,width=20)
             RecordingName.grid(row = 1,column =1 ,sticky= tkinter.E)
 
             #録音ボタンを定義
-            recordingButton= tkinter.Button(RecordingFrame,text ="●",width=8,height=3,command =lambda:application.recordSound(applicationData,preprocessFrame))
+            recordingButton= tkinter.Button(RecordingFrame,text ="●",width=8,height=3,command =lambda:application.recordSound(applicationData,preprocessFrame),bg='gray18',fg='white')
 
-            # 録音ボタンを設置
-            recordingButton.grid(row=2,column=0,columnspan = 2,sticky= tkinter.W+tkinter.E)
+            # 録音ボタンを設置 tkinter.W+tkinter.
+            recordingButton.grid(row=2,column=0,columnspan = 2)
 
 
             
             # 前処理部の記述
-            preprocessFrame=tkinter.Frame(menus,width=200,height=140,bg = 'orange',bd = 0)
+            preprocessFrame=tkinter.Frame(menus,width=200,height=140)
 
             # フレームサイズの自動調整を無効化する
             preprocessFrame.grid_propagate(False)
@@ -922,51 +921,56 @@ class gui:
             preprocessFrame.grid(row = 0,column = 2)
            
             # 操作カテゴリを示すラベルの作成
-            preprocessLabel = tkinter.Label(preprocessFrame,text="前処理")
+            preprocessLabel = tkinter.Label(preprocessFrame,text="前処理",bg='gray18',fg='white')
             preprocessLabel.grid(row = 0,column = 0)
 
 
             # 抽出音素とファイル名の比較ボタンを定義
-            loadFolderButton= tkinter.Button(preprocessLabel,text ="検出音素と実発音が違うデータを削除",width=25,height=2)
+            loadFolderButton= tkinter.Button(preprocessFrame,text ="検出音素と実発音が違うデータを削除",width=26,height=3)
 
             # 抽出音素とファイル名の比較ボタンを設置
             loadFolderButton.grid(row=1,column=0)
 
 
             # 学習部の記述
-            learningFrame=tkinter.Frame(menus,width=200,height=140,bg = 'black',bd = 0)
+            learningFrame=tkinter.Frame(menus,width=100,height=140,bg = 'gray18',bd = 0)
 
             # 自動調節をオフに
             learningFrame.grid_propagate(False)
 
             # 操作カテゴリを示すラベルの作成
-            learningLabel = tkinter.Label(learningFrame,text="学習")
+            learningLabel = tkinter.Label(learningFrame,text="学習",width=10,bg='gray18',fg='white')
+
+            # 操作カテゴリを示すラベルの配置
             learningLabel.grid(row = 0,column = 0)
 
             # フレームを画面いっぱいに表示
             learningFrame.grid(row = 0,column = 3)
 
             # モデルの学習ボタンを作成
-            modelLearnButton= tkinter.Button(learningFrame,text ="モデルの学習",width=10,height=3)
+            modelLearnButton= tkinter.Button(learningFrame,text ="モデルの学習",width=14,height=3)
 
             # モデル学習ボタンの配置
             modelLearnButton.grid(row=1,column=0)
 
             # モデルの書き出し部の記述
-            exportLabel=tkinter.Frame(menus,width=200,height=140,bg = 'red',bd = 0)
+            exportLabel=tkinter.Frame(menus,width=200,height=140,bg = 'gray18',bd = 0)
 
             # 自動配置をオフに
-            exportLabel.grid_propagate()
+            exportLabel.grid_propagate(False)
+
             # モデル書き出し部の配置
             exportLabel.grid(row = 0,column = 4)
 
              # 操作カテゴリを示すラベルの作成(モデル書き出し)
-            expoteModel = tkinter.Label(exportLabel,text="モデル書き出し")
+            expoteModel = tkinter.Label(exportLabel,text="書き出し")
+
+            # 自動サイズ調整をオフに
             expoteModel.grid_propagate(False)
             expoteModel.grid(row = 0,column = 0)
 
             # モデルの学習ボタンを作成
-            export= tkinter.Button(expoteModel,text ="モデルの書き出し",width=10,height=3)
+            export= tkinter.Button(exportLabel,text ="モデルの書き出し",width=10,height=3)
 
             # モデル学習ボタンの配置
             export.grid(row=1,column=0)
@@ -982,14 +986,14 @@ class gui:
             
 
             #スクロール用キャンバスを作成
-            tableCanvas = tkinter.Canvas(dataFrame,bg = 'red',width=975,height=800,scrollregion=(0,0,1000,2000))
+            tableCanvas = tkinter.Canvas(dataFrame,bg = 'white',width=975,height=800)
             
             # キャンバスのサイズの自動調整機能のオフ
             tableCanvas.grid_propagate(False)
 
             # スクロールするキャンバスを配置
             tableCanvas.grid(row=0,column=0)
-            #frame = tkinter.Frame(tableCanvas)
+
 
             # 垂直のスクロールバーを作成
             vsb = tkinter.Scrollbar(dataFrame,orient=tkinter.VERTICAL)
@@ -1000,16 +1004,41 @@ class gui:
   
             # 縦スクロールバーの機能を書く
             tableCanvas.configure(yscrollcommand=vsb.set)
+            tableCanvas.configure(scrollregion=(0,0,1000,2000))
+
+            
+            # スクロールバーのスライダが動かされた時の実行する処理を設定
+            tableCanvas.config(command = tableCanvas.yview)
+
+            # キャンバススクロール時に実行する処理を設定
+            tableCanvas.config(yscrollcommand = tableCanvas.set)
 
 
+            # 境界線の描画
+            '''
+            style = ttk.Style()
+            style.configure("blue.TSeparator",background="blue")
+            line1=ttk.Separator(dataFrame,orient ="horizontal",style="blue.TSeparator")
+
+            line1.grid(row=0,column=0,sticky="ew")
+            '''
             # キャンバスの中にフレームを置く
-            #tableInnerCanvas = tkinter.Canvas(width=800,height=800,bg = 'yellow')
+            #tableInnerCanvas = tkinter.Canvas(tableCanvas,width=975,height=800,bg = 'yellow')
+
+            # 操作カテゴリを示すラベルの作成(モデル書き出し)
+            test = tkinter.Label(tableCanvas,text="test")
+
+            # 自動サイズ調整をオフに
+            test.grid_propagate(False)
+            test.grid(row = 0,column = 0)
+
+
 
             # キャンバスサイズ自動調整機能をオフに
             #tableInnerCanvas.grid_propagate(False)
 
             # キャンバスの内側にあるフレームの配置
-           # tableInnerCanvas.grid(row=0,column=0)
+            #tableInnerCanvas.grid(row=0,column=0)
 
             # データテーブルと読み込みボタンを生成表示
             #application.loadDataTable(tableInnerCanvas)
