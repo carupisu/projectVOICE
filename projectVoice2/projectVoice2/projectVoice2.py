@@ -985,66 +985,43 @@ class gui:
             dataFrame.grid(row=1,column=0,columnspan=2)
             
 
+
             #スクロール用キャンバスを作成
-            tableCanvas = tkinter.Canvas(dataFrame,bg = 'white',width=975,height=800)
+            tableCanvas = tkinter.Canvas(dataFrame,bg = 'red',width=975,height=500,scrollregion=(0,0,975,1000))
             
+            # キャンバスの中にフレームを置く
+            tableInner = tkinter.Frame(tableCanvas,width=975,height=800,bg = 'yellow')
+
+            # 垂直のスクロールバーを作成
+            ybar = tkinter.Scrollbar(dataFrame,orient=tkinter.VERTICAL,command = tableCanvas.yview)
+
+            # キャンバススクロール時に実行する処理を設定 ##
+            tableCanvas.configure(yscrollcommand = ybar.set)
+
+            # 垂直スクロールバーの配置
+            ybar.grid(row=0,column=1,sticky=tkinter.N+tkinter.S)
+   
             # キャンバスのサイズの自動調整機能のオフ
             tableCanvas.grid_propagate(False)
 
             # スクロールするキャンバスを配置
             tableCanvas.grid(row=0,column=0)
 
-
-            # 垂直のスクロールバーを作成
-            vsb = tkinter.Scrollbar(dataFrame,orient=tkinter.VERTICAL)
-
-            # 垂直スクロールバーの配置
-            vsb.grid(row=0,column=1,sticky=tkinter.N+tkinter.S)
-
-  
-            # 縦スクロールバーの機能を書く
-            tableCanvas.configure(yscrollcommand=vsb.set)
-            tableCanvas.configure(scrollregion=(0,0,1000,2000))
-
-            
-
-
-
-            # スクロールバーのスライダが動かされた時の実行する処理を設定
-            tableCanvas.config(command = tableCanvas.yview)
-
-            # キャンバススクロール時に実行する処理を設定
-            tableCanvas.config(yscrollcommand = tableCanvas.set)
-
-
-            # 境界線の描画
-            '''
-            style = ttk.Style()
-            style.configure("blue.TSeparator",background="blue")
-            line1=ttk.Separator(dataFrame,orient ="horizontal",style="blue.TSeparator")
-
-            line1.grid(row=0,column=0,sticky="ew")
-            '''
-            # キャンバスの中にフレームを置く
-            #tableInnerCanvas = tkinter.Canvas(tableCanvas,width=975,height=800,bg = 'yellow')
-
-            # 操作カテゴリを示すラベルの作成(モデル書き出し)
-            test = tkinter.Label(tableCanvas,text="test")
-
-            # 自動サイズ調整をオフに
-            test.grid_propagate(False)
-            test.grid(row = 0,column = 0)
-
-
-
             # キャンバスサイズ自動調整機能をオフに
-            #tableInnerCanvas.grid_propagate(False)
-
+            tableInner.grid_propagate(False)
             # キャンバスの内側にあるフレームの配置
-            #tableInnerCanvas.grid(row=0,column=0)
+            tableInner.grid(row=0,column=0)
 
+            tableCanvas.create_window((0,0),window=tableInner,anchor="nw")
+
+            tableInner.update_idletasks()
+            tableCanvas.config(scrollregion=tableCanvas.bbox("all"))
             # データテーブルと読み込みボタンを生成表示
             #application.loadDataTable(tableInnerCanvas)
+
+            test=tkinter.Label(tableInner,text="test")
+
+            test.grid(row=0,column=0)
 
         else:
 
