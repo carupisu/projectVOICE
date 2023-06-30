@@ -770,6 +770,12 @@ class gui:
         # ウィンドウの大きさを初期設定
         self.window.geometry(windowSize)
    
+        # ウィンドウの最大の大きさを設定
+        self.window.maxsize(width=1500,height=1000)
+
+        # ウィンドウの最小の大きさを設定
+        self.window.minsize(width=400,height=400)
+
         # フレームないにラベルが来てもフレームのサイズが変わらないように設定
         self.window.propagate(False)
  
@@ -800,9 +806,6 @@ class gui:
         if applicationFormat.modelDisplayPermitation==True:#todo　デバッグ中変更
 
             # wavファイルが何も読み込まれていない時
-            # テキストラベルの作成
-            setWavLabel = tkinter.Label(editSoundsFrame,text="wavファイルが入ったフォルダを指定してください。")
-            setWavLabel.grid(row = 0,column =0 )
 
             # 基本設定部の記述
             menus = tkinter.Frame(editSoundsFrame,width=1100,height=140,bg = 'gray18',bd = 0)
@@ -880,7 +883,7 @@ class gui:
 
 
             # 録音部の記述
-            RecordingFrame=tkinter.Frame(menus,width=180,height=140,bg = 'gray18',bd = 0)
+            RecordingFrame=tkinter.Frame(menus,width=180,height=140,bg = 'gray30',bd = 0)
 
             
             # フレームサイズの自動調整を無効化する
@@ -891,12 +894,12 @@ class gui:
 
 
             # 録音カテゴリを示すラベルの作成
-            recordingLabel = tkinter.Label(RecordingFrame,text="録音",bg='gray18',fg='white')
+            recordingLabel = tkinter.Label(RecordingFrame,text="録音",bg='gray30',fg='white')
             recordingLabel.grid(row = 0,column = 0,columnspan = 2)
             
             
             # 発音名を示すラベルの作成
-            recordingLabel = tkinter.Label(RecordingFrame,text="発音",bg='gray18',fg='white')
+            recordingLabel = tkinter.Label(RecordingFrame,text="発音",bg='gray30',fg='white')
             recordingLabel.grid(row = 1,column = 0)
 
             # 発音名のテキスト入力部分の作成
@@ -904,7 +907,7 @@ class gui:
             RecordingName.grid(row = 1,column =1 ,sticky= tkinter.E)
 
             #録音ボタンを定義
-            recordingButton= tkinter.Button(RecordingFrame,text ="●",width=8,height=3,command =lambda:application.recordSound(applicationData,preprocessFrame),bg='gray18',fg='white')
+            recordingButton= tkinter.Button(RecordingFrame,text ="●",width=8,height=3,command =lambda:application.recordSound(applicationData,preprocessFrame),fg='white')
 
             # 録音ボタンを設置 tkinter.W+tkinter.
             recordingButton.grid(row=2,column=0,columnspan = 2)
@@ -912,7 +915,7 @@ class gui:
 
             
             # 前処理部の記述
-            preprocessFrame=tkinter.Frame(menus,width=200,height=140)
+            preprocessFrame=tkinter.Frame(menus,width=200,height=140,bg='gray18')
 
             # フレームサイズの自動調整を無効化する
             preprocessFrame.grid_propagate(False)
@@ -933,13 +936,13 @@ class gui:
 
 
             # 学習部の記述
-            learningFrame=tkinter.Frame(menus,width=100,height=140,bg = 'gray18',bd = 0)
+            learningFrame=tkinter.Frame(menus,width=120,height=140,bg = 'gray30',bd = 0)
 
             # 自動調節をオフに
             learningFrame.grid_propagate(False)
 
             # 操作カテゴリを示すラベルの作成
-            learningLabel = tkinter.Label(learningFrame,text="学習",width=10,bg='gray18',fg='white')
+            learningLabel = tkinter.Label(learningFrame,text="学習",width=10,bg='gray30',fg='white')
 
             # 操作カテゴリを示すラベルの配置
             learningLabel.grid(row = 0,column = 0)
@@ -963,14 +966,14 @@ class gui:
             exportLabel.grid(row = 0,column = 4)
 
              # 操作カテゴリを示すラベルの作成(モデル書き出し)
-            expoteModel = tkinter.Label(exportLabel,text="書き出し")
+            expoteModel = tkinter.Label(exportLabel,text="書き出し",bg='gray18',fg='white')
 
             # 自動サイズ調整をオフに
             expoteModel.grid_propagate(False)
             expoteModel.grid(row = 0,column = 0)
 
             # モデルの学習ボタンを作成
-            export= tkinter.Button(exportLabel,text ="モデルの書き出し",width=10,height=3)
+            export= tkinter.Button(exportLabel,text ="モデルの書き出し",width=12,height=3)
 
             # モデル学習ボタンの配置
             export.grid(row=1,column=0)
@@ -987,10 +990,10 @@ class gui:
 
 
             #スクロール用キャンバスを作成
-            tableCanvas = tkinter.Canvas(dataFrame,bg = 'red',width=975,height=500,scrollregion=(0,0,975,1000))
+            tableCanvas = tkinter.Canvas(dataFrame,bg = 'white',width=975,height=500,scrollregion=(0,0,975,1000))
             
             # キャンバスの中にフレームを置く
-            tableInner = tkinter.Frame(tableCanvas,width=975,height=800,bg = 'yellow')
+            whiteFrame = tkinter.Frame(tableCanvas,width=975,height=800,bg = 'white')
 
             # 垂直のスクロールバーを作成
             ybar = tkinter.Scrollbar(dataFrame,orient=tkinter.VERTICAL,command = tableCanvas.yview)
@@ -1008,20 +1011,24 @@ class gui:
             tableCanvas.grid(row=0,column=0)
 
             # キャンバスサイズ自動調整機能をオフに
-            tableInner.grid_propagate(False)
+            whiteFrame.grid_propagate(False)
+            
             # キャンバスの内側にあるフレームの配置
-            tableInner.grid(row=0,column=0)
+            whiteFrame.grid(row=0,column=0)
 
-            tableCanvas.create_window((0,0),window=tableInner,anchor="nw")
+            # キャンバスにウィジェットを配置
+            tableCanvas.create_window((0,0),window=whiteFrame,anchor="nw")
 
-            tableInner.update_idletasks()
+            # 内側のフレームを更新？
+            whiteFrame.update_idletasks()
             tableCanvas.config(scrollregion=tableCanvas.bbox("all"))
+            
             # データテーブルと読み込みボタンを生成表示
-            #application.loadDataTable(tableInnerCanvas)
+            application.loadDataTable(whiteFrame)
 
-            test=tkinter.Label(tableInner,text="test")
+            #test=tkinter.Label(tableInner,text="test")
 
-            test.grid(row=0,column=0)
+            #test.grid(row=0,column=0)
 
         else:
 
@@ -1037,12 +1044,13 @@ class gui:
             soundEditFrame = tkinter.Label(index,text="音源クリエーターの意向により内部データを表示しません",font=big)
             soundEditFrame.grid(row = 0,column =0 )
    
-    def loadDataTable(self,dataTable):
+    def loadDataTable(self,whiteFrame):
         
         # データテーブルを生成表示
         #dataTable = application.loadDataTable(editSoundsFrame)
-        dataTable.grid_propagate(False)            
-        dataTable.grid(row=0,column=0,columnspan=4)#ここの４はtodo
+        table = tkinter.Frame(whiteFrame,width=800,height=1000,bg='red')
+       # table.grid_propagate(False)            
+        table.grid(row=0,column=0)#ここの４はtodo
 
         # wavデータが０かそれ以外かで条件分岐
         if applicationFormat.totalWavAmount != 0:
@@ -1051,47 +1059,47 @@ class gui:
             for index in numpy.arange(0,int(applicationFormat.totalWavAmount),1):
 
                 # 本レコードを格納するフレームを作成
-                tableRecord = tkinter.Frame(dataTable,width='1000',height=100,bg = 'yellow',bd = 2)
+                tableRecord = tkinter.Frame(table,width='800',height=100,bg = 'yellow',bd = 2)
                
                 # レコードを配置
-                tableRecord.grid(row=index + 2,column=0)
+                tableRecord.grid(row=index + 2,column=0,sticky=tkinter.CENTER)
 
                 # グラフの描画 キャンバス
-                graphFrame = application.drawFigAsFrame(applicationFormat,index)
+                #graphFrame = application.drawFigAsFrame(applicationFormat,index)
       
-                graphFrame.grid(row=index,column=0)
+                #graphFrame.grid(row=index,column=0)
                
                 # 録音カテゴリを示すラベルの作成
-                phoneLabel = tkinter.Label(tableRecord,text="音素")
-                phoneLabel.grid(row = index + 2,column = 1)
+                #phoneLabel = tkinter.Label(tableRecord,text="音素")
+                #phoneLabel.grid(row = index + 2,column = 1)
 
                 
                 # 音素についてのループ
-                for phone in numpy.arange(0,int(getattr(applicationFormat,"PhonesAlignment" + str(index))[2]),1):
+                #for phone in numpy.arange(0,int(getattr(applicationFormat,"PhonesAlignment" + str(index))[2]),1):
 
  
                     # 音素の名前を取得
-                    alignmentName = getattr(applicationFormat,"correctPhones" + str(index))
+                 #   alignmentName = getattr(applicationFormat,"correctPhones" + str(index))
 
-                    print(alignmentName)
+                 #   print(alignmentName)
                     # アライメントの数だけチェックボックスを表示
-                    alignment = tkinter.Checkbutton(tableRecord,text = alignmentName[phone])
+                 #   alignment = tkinter.Checkbutton(tableRecord,text = alignmentName[phone])
 
                     # チェックボックスの配置
-                    alignment.grid(row = phone + 1,column =1)
+                 #   alignment.grid(row = phone + 1,column =1)
                 
         else:
 
             # データが読み込まれていない時の処理
             # フォルダ読み込み用ボタンを作成
-            loadFolderButton= tkinter.Button(dataTable,text ="音声フォルダの読み込み",width=20,height=2,command =lambda:application.loadWavs(editSoundsFrame))
+            loadFolderButton= tkinter.Button(table,text ="音声フォルダの読み込み",width=20,height=2,command =lambda:application.loadWavs(table))
 
             # ボタンの配置
             loadFolderButton.grid(row = 2,column = 0,columnspan = 3)
 
             print("wavデータなし")
        
-            return dataTable
+         
            
 
     def drawComposerDisplay(self,applicationFormat,application):
