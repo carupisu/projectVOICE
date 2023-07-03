@@ -807,6 +807,22 @@ class gui:
 
             # wavファイルが何も読み込まれていない時
 
+            # 背景用のフレームを作成
+            dataFrame = tkinter.Frame(editSoundsFrame,width=1000,height=1000,bg='white')
+            
+            # フレームの自動調整機能をオフにする
+            dataFrame.grid_propagate(False)
+
+            # 背景用のフレームを表示
+            dataFrame.grid(row=1,column=0,columnspan=2)
+
+            #スクロール用キャンバスを作成　注意！これは画面中央の白いキャンバスであってヘッダではない　前方参照を防ぐためにここに記述している。
+            tableCanvas = tkinter.Canvas(dataFrame,bg = 'white',width=975,height=500,scrollregion=(0,0,975,1000))
+            
+
+            # キャンバスの中にフレームを置く 注意！これは画面中央の白いフレームであってヘッダではない　前方参照を防ぐためにここに記述している。
+            whiteFrame = tkinter.Frame(tableCanvas,width=975,height=800,bg = 'white')
+
             # 基本設定部の記述
             menus = tkinter.Frame(editSoundsFrame,width=1100,height=140,bg = 'gray18',bd = 0)
 
@@ -898,6 +914,9 @@ class gui:
             recordingLabel.grid(row = 0,column = 0,columnspan = 2)
             
             
+
+
+
             # 発音名を示すラベルの作成
             recordingLabel = tkinter.Label(RecordingFrame,text="発音",bg='gray30',fg='white')
             recordingLabel.grid(row = 1,column = 0)
@@ -906,25 +925,41 @@ class gui:
             RecordingName = tkinter.Entry(RecordingFrame,width=20)
             RecordingName.grid(row = 1,column =1 ,sticky= tkinter.E)
 
-            #録音ボタンを定義
-            recordingButton= tkinter.Button(RecordingFrame,text ="●",width=8,height=3,command =lambda:application.recordSound(applicationData,preprocessFrame),fg='white')
+            # 録音ボタンを定義
+            recordingButton= tkinter.Button(RecordingFrame,text ="●",width=8,height=3,command =lambda:application.recordSound(applicationData,preprocessFrame))
 
             # 録音ボタンを設置 tkinter.W+tkinter.
             recordingButton.grid(row=2,column=0,columnspan = 2)
 
 
+
+
+            # 音声フォルダ読み込みセクション用のフレームを作成
+            soundLoadFrame = tkinter.Frame(menus,width=200,height=140,bg='gray18')
+
+            # 自動サイズ調整機能をオフに
+            soundLoadFrame.grid_propagate(False)
+
+            # 音声フォルダ読み込みセクションをグリッド配置
+            soundLoadFrame.grid(row=0,column=2)
             
+            # フォルダ読み込み用ボタンを作成
+            loadFolderButton= tkinter.Button(soundLoadFrame,text ="音声フォルダの読み込み",width=20,height=2,command =lambda:application.loadWavs(whiteFrame))
+
+            # ボタンの配置
+            loadFolderButton.grid(row = 1,column = 0,columnspan = 2)
+
             # 前処理部の記述
-            preprocessFrame=tkinter.Frame(menus,width=200,height=140,bg='gray18')
+            preprocessFrame=tkinter.Frame(menus,width=200,height=140,bg='gray30')
 
             # フレームサイズの自動調整を無効化する
             preprocessFrame.grid_propagate(False)
 
             # フレームを表示
-            preprocessFrame.grid(row = 0,column = 2)
+            preprocessFrame.grid(row = 0,column = 3)
            
             # 操作カテゴリを示すラベルの作成
-            preprocessLabel = tkinter.Label(preprocessFrame,text="前処理",bg='gray18',fg='white')
+            preprocessLabel = tkinter.Label(preprocessFrame,text="前処理",bg='gray30',fg='white')
             preprocessLabel.grid(row = 0,column = 0)
 
 
@@ -936,37 +971,39 @@ class gui:
 
 
             # 学習部の記述
-            learningFrame=tkinter.Frame(menus,width=120,height=140,bg = 'gray30',bd = 0)
+            learningFrame=tkinter.Frame(menus,width=140,height=140,bg = 'gray18',bd = 0)
 
             # 自動調節をオフに
             learningFrame.grid_propagate(False)
 
             # 操作カテゴリを示すラベルの作成
-            learningLabel = tkinter.Label(learningFrame,text="学習",width=10,bg='gray30',fg='white')
+            learningLabel = tkinter.Label(learningFrame,text="学習",width=10,bg='gray18',fg='white')
 
             # 操作カテゴリを示すラベルの配置
             learningLabel.grid(row = 0,column = 0)
 
             # フレームを画面いっぱいに表示
-            learningFrame.grid(row = 0,column = 3)
+            learningFrame.grid(row = 0,column = 4)
 
             # モデルの学習ボタンを作成
             modelLearnButton= tkinter.Button(learningFrame,text ="モデルの学習",width=14,height=3)
 
             # モデル学習ボタンの配置
-            modelLearnButton.grid(row=1,column=0)
+            modelLearnButton.grid(row=1,column=0,padx=20)
+
+
 
             # モデルの書き出し部の記述
-            exportLabel=tkinter.Frame(menus,width=200,height=140,bg = 'gray18',bd = 0)
+            exportLabel=tkinter.Frame(menus,width=200,height=140,bg = 'gray30',bd = 0)
 
             # 自動配置をオフに
             exportLabel.grid_propagate(False)
 
             # モデル書き出し部の配置
-            exportLabel.grid(row = 0,column = 4)
+            exportLabel.grid(row = 0,column = 5)
 
              # 操作カテゴリを示すラベルの作成(モデル書き出し)
-            expoteModel = tkinter.Label(exportLabel,text="書き出し",bg='gray18',fg='white')
+            expoteModel = tkinter.Label(exportLabel,text="書き出し",bg='gray30',fg='white')
 
             # 自動サイズ調整をオフに
             expoteModel.grid_propagate(False)
@@ -978,22 +1015,12 @@ class gui:
             # モデル学習ボタンの配置
             export.grid(row=1,column=0)
 
-            # 背景用のフレームを作成
-            dataFrame = tkinter.Frame(editSoundsFrame,width=1000,height=1000,bg='white')
-            
-            # フレームの自動調整機能をオフにする
-            dataFrame.grid_propagate(False)
 
-            # 背景用のフレームを表示
-            dataFrame.grid(row=1,column=0,columnspan=2)
             
 
 
-            #スクロール用キャンバスを作成
-            tableCanvas = tkinter.Canvas(dataFrame,bg = 'white',width=975,height=500,scrollregion=(0,0,975,1000))
-            
-            # キャンバスの中にフレームを置く
-            whiteFrame = tkinter.Frame(tableCanvas,width=975,height=800,bg = 'white')
+
+
 
             # 垂直のスクロールバーを作成
             ybar = tkinter.Scrollbar(dataFrame,orient=tkinter.VERTICAL,command = tableCanvas.yview)
@@ -1047,9 +1074,9 @@ class gui:
     def loadDataTable(self,whiteFrame):
         
         # データテーブルを生成表示
-        #dataTable = application.loadDataTable(editSoundsFrame)
-        table = tkinter.Frame(whiteFrame,width=800,height=1000,bg='red')
-       # table.grid_propagate(False)            
+        table = tkinter.Frame(whiteFrame,width=800,height=1000,bg='red',padx=20)
+
+        table.grid_propagate(False)            
         table.grid(row=0,column=0)#ここの４はtodo
 
         # wavデータが０かそれ以外かで条件分岐
@@ -1062,7 +1089,7 @@ class gui:
                 tableRecord = tkinter.Frame(table,width='800',height=100,bg = 'yellow',bd = 2)
                
                 # レコードを配置
-                tableRecord.grid(row=index + 2,column=0,sticky=tkinter.CENTER)
+                tableRecord.grid(row=index + 2,column=0)
 
                 # グラフの描画 キャンバス
                 #graphFrame = application.drawFigAsFrame(applicationFormat,index)
@@ -1091,11 +1118,6 @@ class gui:
         else:
 
             # データが読み込まれていない時の処理
-            # フォルダ読み込み用ボタンを作成
-            loadFolderButton= tkinter.Button(table,text ="音声フォルダの読み込み",width=20,height=2,command =lambda:application.loadWavs(table))
-
-            # ボタンの配置
-            loadFolderButton.grid(row = 2,column = 0,columnspan = 3)
 
             print("wavデータなし")
        
@@ -1115,7 +1137,7 @@ class gui:
         mainParamaterWindow = tkinter.PanedWindow(application.window,orient = tkinter.VERTICAL)
 
         # ピッチ編集部とパラメタ編集部を含む部分のフレームを作成
-        mainFrame = tkinter.Frame(application.window,height=100,bg = 'red',bd = 0)
+        mainFrame = tkinter.Frame(application.window,height=100,bg = 'orange',bd = 0)
        
         # ピッチとパラメタが合わさった部分を列方向にめいいっぱいに広げる　
         mainFrame.grid_columnconfigure(0,weight = 1)
@@ -1280,7 +1302,7 @@ class gui:
     def drawSourceCreaterDisplay(self,applicationFormat,application,big):
        
         ################################### 音源クリエーターモード ##################################
-
+        #todo 表示禁止はこのメソッドないで書くべき
        # editSoundsFrame.tkraise()
 
         # 音源クリエーターモードでのベースとなるフレームを作成 todo
@@ -1702,7 +1724,7 @@ class gui:
         # デフォルトで5秒間のの録音とする
         recordingDurationS = 5
    
-    def loadWavs(self,soundEdifFrame):
+    def loadWavs(self,whiteFrame):
 
         # フォルダを読み込むメソッド　フォルダパスを返す
 
@@ -1729,7 +1751,7 @@ class gui:
 
 
         # データテーブルを生成表示
-        application.loadDataTable(soundEdifFrame)
+        application.loadDataTable(whiteFrame)
 
 
     def clickNewCreate(self,applicationFormat,application,big):
