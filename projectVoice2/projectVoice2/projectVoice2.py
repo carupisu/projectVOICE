@@ -817,14 +817,14 @@ class gui:
             dataFrame.grid(row=1,column=0,columnspan=2)
 
             #スクロール用キャンバスを作成　注意！これは画面中央の白いキャンバスであってヘッダではない　前方参照を防ぐためにここに記述している。
-            tableCanvas = tkinter.Canvas(dataFrame,bg = 'white',width=975,height=500,scrollregion=(0,0,975,1000))
+            tableCanvas = tkinter.Canvas(dataFrame,bg = 'white',width=975,height=900,scrollregion=(0,0,975,1300))
             
 
             # キャンバスの中にフレームを置く 注意！これは画面中央の白いフレームであってヘッダではない　前方参照を防ぐためにここに記述している。
-            whiteFrame = tkinter.Frame(tableCanvas,width=975,height=800,bg = 'white')
+            whiteFrame = tkinter.Frame(tableCanvas,width=975,height=1200,bg = 'white')
 
             # 基本設定部の記述
-            menus = tkinter.Frame(editSoundsFrame,width=1100,height=140,bg = 'gray18',bd = 0)
+            menus = tkinter.Frame(editSoundsFrame,width=1300,height=140,bg = 'gray18',bd = 0)
 
             # 自動サイズ調整機能をオフ
             menus.grid_propagate(False)
@@ -1074,7 +1074,7 @@ class gui:
     def loadDataTable(self,whiteFrame):
         
         # データテーブルを生成表示
-        table = tkinter.Frame(whiteFrame,width=800,height=1000,bg='red',padx=20)
+        table = tkinter.Frame(whiteFrame,width=800,height=1000,bg='red')
 
         table.grid_propagate(False)            
         table.grid(row=0,column=0)#ここの４はtodo
@@ -1082,38 +1082,52 @@ class gui:
         # wavデータが０かそれ以外かで条件分岐
         if applicationFormat.totalWavAmount != 0:
 
-            # wavデータの数だけループ処理
-            for index in numpy.arange(0,int(applicationFormat.totalWavAmount),1):
+            # wavデータの数だけループ処理    for index in numpy.arange(0,int(applicationFormat.totalWavAmount) + 1,1):
+
+            for index in numpy.arange(0,2,1):
 
                 # 本レコードを格納するフレームを作成
-                tableRecord = tkinter.Frame(table,width='800',height=100,bg = 'yellow',bd = 2)
+                tableRecord = tkinter.Frame(table,width='800',height=200,bg = 'yellow',bd = 2,relief="ridge")
                
+                # 見出しを書く
+                if index == 1:
+                    
+                     # 本レコードを格納するフレームを作成
+                    indexLabel = tkinter.Frame(table,width='800',height=100,bg = 'yellow',bd = 2,relief="ridge")
+                    # 左側のラベルを作成
+                    indesLabelLeft = tkinter.Label(indexLabel,text="ピッチと音素の区切り")
+                    indesLabelLeft.grid(row=0,column=0)
+
+                    # 右側のラベルを作成
+                    indesLabelRight = tkinter.Label(indexLabel,text="検出された音素と実際の音素")
+                    indesLabelRight.grid(row=0,column=0)
+
                 # レコードを配置
-                tableRecord.grid(row=index + 2,column=0)
+                tableRecord.grid(row=index + 1,column=0)
 
                 # グラフの描画 キャンバス
-                #graphFrame = application.drawFigAsFrame(applicationFormat,index)
+                graphCanvas = application.drawFigAsFrame(applicationFormat,index)
       
-                #graphFrame.grid(row=index,column=0)
+                graphCanvas.grid_propagate(False)
+                graphCanvas.grid(in_=tableRecord,row=0,column=0)
                
                 # 録音カテゴリを示すラベルの作成
-                #phoneLabel = tkinter.Label(tableRecord,text="音素")
-                #phoneLabel.grid(row = index + 2,column = 1)
+                phoneLabel = tkinter.Label(tableRecord,text="音素")
+                phoneLabel.grid(row = index,column = 1)
 
-                
                 # 音素についてのループ
-                #for phone in numpy.arange(0,int(getattr(applicationFormat,"PhonesAlignment" + str(index))[2]),1):
+                for phone in numpy.arange(0,len(getattr(applicationFormat,"PhonesAlignment" + str(index)))-2,1):
 
  
                     # 音素の名前を取得
-                 #   alignmentName = getattr(applicationFormat,"correctPhones" + str(index))
+                    alignmentName = getattr(applicationFormat,"correctPhones" + str(index))
 
-                 #   print(alignmentName)
+
                     # アライメントの数だけチェックボックスを表示
-                 #   alignment = tkinter.Checkbutton(tableRecord,text = alignmentName[phone])
+                    alignment = tkinter.Checkbutton(tableRecord,text = alignmentName[phone])
 
                     # チェックボックスの配置
-                 #   alignment.grid(row = phone + 1,column =1)
+                    alignment.grid(row = phone,column =1)
                 
         else:
 
@@ -1121,7 +1135,9 @@ class gui:
 
             print("wavデータなし")
        
-         
+            # 録音カテゴリを示すラベルの作成
+            noWavsLabel = tkinter.Label(table,text="WAVファイルが読み込まれていません。ヘッダーから録音または音声フォルダを指定してください。")
+            noWavsLabel.grid(row = 0,column = 0)
            
 
     def drawComposerDisplay(self,applicationFormat,application):
@@ -1482,10 +1498,6 @@ class gui:
        
         # matplotlibの描画領域とフレームの関連づけ
         self.canvas = FigureCanvasTkAgg(fig)
-        #self.canvas.draw()
-       # plt.show()
-       
-        #returnData = self.canvas
 
         # matplotlibのグラフをキャンバスに配置
         returnData = self.canvas.get_tk_widget()
