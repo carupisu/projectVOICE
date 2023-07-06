@@ -1,5 +1,6 @@
 
 
+
 ## 480ティックのみ対応 一定テンポのみ対応　サンプリングレート44.1kのみ対応 4/4のみ確認している　ベロシティは１２７が最大　ファイル名は＿Rが混入してるののみ除外
 # 学習用音声デ＾た音声ファイルは WAV形式で 16kHz, 16bit, PCM（無圧縮）形式である必要があり ます。テキストファイルはテキスト形式で、文字コードは UTF-8です。
 ############################### ファイルインポート ######################
@@ -1172,8 +1173,7 @@ class gui:
         mainParamaterWindow.grid_rowconfigure(0,weight = 1)
 
        
-        test = tkinter.Label(pitchEditCanvas,text="ラベル")
-        test.grid(row=0,column=0)
+ 
         #イベント処理の設定
         #pitchEditCanvas.bind("<Enter>",self.startMidDrag)
         #pitchEditCanvas.bind("<ButtonPress>",self.midDrag)
@@ -1262,7 +1262,7 @@ class gui:
 
 
         # 歌詞のラベルを作成
-        lblLyric = tkinter.Label(text="歌詞")
+        lblLyric = tkinter.Label(optionFrame,text="歌詞")
 
         # 歌詞のラベルを配置
         lblLyric.grid(row=0,column=0,sticky=tkinter.W)
@@ -1309,7 +1309,7 @@ class gui:
         application.mainBG(pitchEditCanvas)
 
         # グリッド線を描画
-        application.drawGrid(pitchEditCanvas)
+        #application.drawGrid(pitchEditCanvas)
 
 
         # 鍵盤を描画
@@ -1668,56 +1668,90 @@ class gui:
 
             # 計算された座標に基づいて線を描画
             pitchEditCanvas.create_line(startX,startY,endX,endY,fill="gray8",width= 2)
-   
     def mainBG(self,pitchEditCanvas):
        
-        # グリッド水平線を描画
-        for index in range(0,WHIHTE_KEYBOAD_AMOUNT,2):
-           
-            GRID_HEIGHT_SPACE = WHIHTE_KEYBOAD_SPACE * 0.8
-            # 長方形の左上と右下の座標を計算
-            startX = 0
-            startY = index * GRID_HEIGHT_SPACE
-            endX = 6000
-            endY =  (index + 1 ) *GRID_HEIGHT_SPACE
+        SCALEING_FACTOR=2
 
-            # 計算された座標に基づいて線を描画
-            pitchEditCanvas.create_rectangle(startX,startY,endX,endY,fill="gray0",width= 0)
+        
+        #for index in numpy.arange(0,88*SCALEING_FACTOR * 13,SCALEING_FACTOR * 13):
+
+        pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR,2000,13*SCALEING_FACTOR ),fill="white",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR,2000,26*SCALEING_FACTOR ),fill="gray",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR,2000,39*SCALEING_FACTOR ),fill="white",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR,2000,52*SCALEING_FACTOR ),fill="gray",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR,2000,65*SCALEING_FACTOR ),fill="white",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR,2000,78*SCALEING_FACTOR ),fill="gray",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR,2000,91*SCALEING_FACTOR ),fill="white",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,91*SCALEING_FACTOR,2000, 114*SCALEING_FACTOR),fill="white",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,114*SCALEING_FACTOR,2000,27*SCALEING_FACTOR ),fill="gray",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,127*SCALEING_FACTOR,2000,140*SCALEING_FACTOR ),fill="white",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,140*SCALEING_FACTOR,2000,153*SCALEING_FACTOR ),fill="gray",width= 1)
+
+        pitchEditCanvas.create_rectangle((0,153*SCALEING_FACTOR,2000, 163*SCALEING_FACTOR),fill="white",width= 1)
 
     def drawKeyboad(self,pitchEditCanvas):
 
        # 画面左の鍵盤を描画するメソッド
        
-        BLACK_KEYBOAD_SHRINK_RATIO = 0.7#[nd]黒鍵の高さの白鍵の高さに対する割合
-        #mainFrame.update_idletasks() todo?
+  
+        SCALEING_FACTOR=2
+        L=80
+        C = L*1.8
 
-        # 白鍵を描画
-        for index in range(WHIHTE_KEYBOAD_AMOUNT):
-           
-            # 長方形の左上と右下の座標を計算
-            startX = 0
-            startY = WHIHTE_KEYBOAD_SPACE * index
-            endX = WHIHTE_KEYBOAD_WIDTH
-            endY =  WHIHTE_KEYBOAD_SPACE * index
+        # 1オクターブずつ描画
+        for index in numpy.arange(0,int(155 * SCALEING_FACTOR * 4),int(155 * SCALEING_FACTOR)):#本来は１６５ずつずらすが誤差蓄積(おそらく線の太さ)のため少し小さくしてい   
 
-            # 計算された座標に基づいて長方形を描画
-            pitchEditCanvas.create_rectangle(startX,startY,endX,endY,fill="azure",width= 1)
+            # Cを描画
+            pitchEditCanvas.create_rectangle(0,int(135 * SCALEING_FACTOR + index),C,int(157.5* SCALEING_FACTOR + index),fill="azure",width= 1)
 
-        # 黒鍵を描画
+            # ドの位置を（yamaha基準でなく）国際基準で表示
+            cPosition="1"
+            test = tkinter.Label(pitchEditCanvas,text=cPosition)
+            test.grid(row=0,column=0)
+            # Dを描画
+            pitchEditCanvas.create_rectangle(0,int(112.5 * SCALEING_FACTOR + index),C,int(135 * SCALEING_FACTOR + index),fill="azure",width= 1)
 
-        #[px]黒鍵の白鍵に対するずらし幅を計算
-        blackKeyboadOffset = int(WHIHTE_KEYBOAD_SPACE / 2)
+            # Eを描画
+            pitchEditCanvas.create_rectangle(0,int(90 * SCALEING_FACTOR + index),C,int(112.5 * SCALEING_FACTOR + index),fill="azure",width= 1)
 
-        # 黒鍵のループで描画
+            # Fを描画
+            pitchEditCanvas.create_rectangle(0,int(67.5 * SCALEING_FACTOR + index),C,int(90 * SCALEING_FACTOR + index),fill="azure",width= 1)
 
-        # 1オクターブ分の描画ループ
-       # for index in range(0,BLACK_KEYBOAD_AMOUNT,2):
-           
+            # Gを描画
+            pitchEditCanvas.create_rectangle(0,int(45 * SCALEING_FACTOR + index),C,int(67.5 * SCALEING_FACTOR + index),fill="azure",width= 1)
 
+            # Aを描画
+            pitchEditCanvas.create_rectangle(0,int(22.5 *SCALEING_FACTOR + index),C,int(45 * SCALEING_FACTOR + index),fill="azure",width= 1)
 
+            # Bを描画
+            pitchEditCanvas.create_rectangle(0,int(0 * SCALEING_FACTOR + index),C,int(22.5* SCALEING_FACTOR + index),fill="azure",width= 1)
 
-        # 計算された座標に基づいて長方形を描画
-        pitchEditCanvas.create_rectangle(0,startY,BLACK_KEYBOAD_WIDTH,endY,fill="gray10",width= 1)
+            # C#を描画
+            pitchEditCanvas.create_rectangle(0,int(130.5 * SCALEING_FACTOR + index),L,int(144.5 * SCALEING_FACTOR + index),fill="black",width= 1)
+
+            # D#を描画
+            pitchEditCanvas.create_rectangle(0,int(103.5 * SCALEING_FACTOR + index),L,int(117.5 * SCALEING_FACTOR + index),fill="black",width= 1)
+
+            # F#を描画
+            pitchEditCanvas.create_rectangle(0,int(64 * SCALEING_FACTOR + index),L,int(78 * SCALEING_FACTOR + index),fill="black",width= 1)
+
+            # G#を描画
+            pitchEditCanvas.create_rectangle(0,int(38 * SCALEING_FACTOR + index),L,int(52 * SCALEING_FACTOR + index),fill="black",width= 1)
+   
+            # A#を描画
+            pitchEditCanvas.create_rectangle(0,int(12 * SCALEING_FACTOR + index),L,int(26 * SCALEING_FACTOR + index),fill="black",width= 1)
+
+          
     def recordSound(self,applicationData,preprocessFrame):
        
         # 音声録音の時に呼び出されるイベントハンドラ
