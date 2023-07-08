@@ -53,13 +53,8 @@ STANDARD_TEMPOS_S = 0.0010416666#[s]120bpmの時の秒数 todo 1テンポの秒�
 MAX_VEROCITY = 127      # ０からカウントのベロシティーの最大値
 
 # ピアノロール関係
-WHIHTE_KEYBOAD_WIDTH = 100  #[px]白鍵の幅
-WHIHTE_KEYBOAD_AMOUNT = 51  # 白鍵の数
-WHIHTE_KEYBOAD_SPACE = 20   #[px]白鍵同士の間隔
-BLACK_KEYBOAD_WIDTH = 60    #[px]白鍵の幅
-BLACK_KEYBOAD_AMOUNT = 51   # 白鍵の数（間引く前）
-BLACK_KEYBOAD_SPACE = 20    #[px]白鍵同士の間隔
-HORIZON_LENGTH = 2000       #[px]水平線グリッドの長さ
+L=80
+C = L*1.8
 
 # グリッド線関連
 VERTICAL_LENGTH = 2000      #[px]垂直線のグリッドの長さ
@@ -106,12 +101,12 @@ def save_file(event):
 
 # 名前を付けて保存するイベント
 
-def import_wav(event):
+def import_wav():
    
     # wavファイルを読み込みの時のイベント関数
 
     # タイプの設定
-    type = [('WAV','*.wav')]
+    type = [('mp3','*.mp3')]
    
     # デフォルトのディレクトリを設定してダイアログ表示
     wavDataPath = filedialog.askopenfilename(filetypes = type,initialdir = DEFAULT_READ_LOCATION)
@@ -227,6 +222,28 @@ class midi():
         oldCourslePosX = event.x
         oldCourslePosy = event.y
 
+    def countNotes(self,midiFile,trackNumber):
+
+        # 与えられたトラック無いのノートの数をカウントするメソッド
+
+        # カウンターの初期化
+        count = 0
+
+        # 引数trackNumberが不正な値でない事をチェックする
+        #if type(trackNumber) is int and trackNumber >= 0 and trackNumber < len(midiFile.tracks):
+        
+            # 正常系の処理
+            
+        for msg in midiFile.tracks[trackNumber]:
+             if msg.type =="note_on" and msg.dict()["velocity"] !=0:
+                 count +=1
+        #else:
+            # 異常系のしょり
+
+            #return None
+
+        return count
+
     def import_Midi(self):
    
         # 読み込んだを時間vs周波数と時間vs継続長のデータに変換するメソッド
@@ -239,9 +256,44 @@ class midi():
         # midiデータを読み込み変数に格納
         midiData = mido.MidiFile(readMidiData,clip=True)
 
-        #確認表示
+        # midiの生データ確表示デバッグ用
         print(midiData)
 
+        # 複数のトラックからどのトラックを編集対象とするか選択させる為にダイアログを表示
+        dlg_modal = tkinter.Toplevel()
+
+        # ウィンドウの名前の指定
+        dlg_modal.title("編集対象のmidiトラックを選択")
+
+        # ダイアログのサイズの指定
+        dlg_modal.geometry("300x300")
+
+        # ウィンドウをモーダルにする
+        dlg_modal.grab_set()
+
+        # 新しく作ったダイアログにフォーカスを移す
+        dlg_modal.focus_set()
+
+        # デバッグ用テスト表示
+        print(midiData.tracks)
+        # 新しく作ったウィンドウをタスクバーに表示しない設定にする
+        #dlg_modal.transient(master)
+        
+        
+        for index in numpy.arange(0,len(midiData.tracks),1):
+            print(self.countNotes(midiData,index))
+
+        # ダイアログ中のトップフレームを作成
+        dlgTop = tkinter.Frame(dlg_modal,width="300",height="300")
+        # リストボックスの作成
+        listBox = tkinter.Listbox(dlg_modal,width = 20,selectmode="single")
+        
+        # リストボックスの選択肢を作成
+        displayList=('1','2')
+
+        var = tkinter.StringVar(value = displayList)
+
+        listbox = tkinter.Listbox(dlgTop,listvariable=var)
         # midiデータからビートあたりのティック数を読み込み
         ticksPerBeat = midiData.ticks_per_beat
 
@@ -1259,7 +1311,44 @@ class gui:
         optionFrame.grid(row = 0,column = 1,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
 
 
+        # 音源読み込みボタンの作成
+        lyricIncertButton = tkinter.Button(optionFrame,text ="音源パーソナリティを読み込み",width=10,height=2)
 
+        # ボタンの配置
+        lyricIncertButton.grid(row=0,column=0)
+
+
+       
+        # BPMのラベルを作成
+        bpmLabel = tkinter.Label(optionFrame,text="BPM")
+
+        # ＢbpmLabelＭのラベルを配置
+        bpmLabel.grid(row=1,column=0,sticky=tkinter.W)
+
+        # 4拍子か３拍子か変拍子（←これはtodo）を
+        beatTypeLabel = tkinter.Label(optionFrame,text="拍子の種類")
+
+        # ＢbpmLabelＭのラベルを配置
+        beatTypeLabel.grid(row=2,column=0,sticky=tkinter.W)
+
+        # 拍子を示すリストを定義
+        beatTyopes = ("４拍子","３拍子","変拍子（未実装）")
+        
+        # 拍子の設定用コンボボックスの作成
+        beatTypeCombo = ttk.Combobox(optionFrame,width=6,height=1,values = beatTyopes)
+
+        # midi編集時のスナップ間隔を示すラベルの定義
+        snapIntervalLabel = tkinter.Label(optionFrame,text="midi操作時のスナップ間隔")
+
+
+        # スナップの粗さを示すリストを定義
+        snapTyopes = ("４分音符","８分音符","１６音符","32分音符","フリー")
+        
+        # スナップ設定用コンボボックスの作成
+        snapTypeCombo = ttk.Combobox(optionFrame,width=6,height=1,values = snapTyopes)
+
+        # スナップ用のラベルを配置
+        snapIntervalLabel.grid(row=2,column=0,sticky=tkinter.W)
 
         # 歌詞のラベルを作成
         lblLyric = tkinter.Label(optionFrame,text="歌詞")
@@ -1529,7 +1618,7 @@ class gui:
 
         # 楽曲クリエーターモードに画面を切り替えるメソッド
        
-        totalFrame.tkraise()
+        application.totalFrame.tkraise()
         mainFrame.tkraise()
         paramatorFrame.tkraise()
         print("楽曲クリエーターモードに画面を切り替え")
@@ -1582,7 +1671,7 @@ class gui:
         menu.add_cascade(label='import',menu=menu_import)
 
         # 子要素（psnファイル)を設置
-        menu_import.add_command(label='personality', command = import_wav)
+        #menu_import.add_command(label='personality', command = import_wav)
         menu_import.add_separator()
 
         # 子要素（midi読み込み)を設置
@@ -1641,63 +1730,61 @@ class gui:
         # クリック検出時の処理を定義するメソッド
         print("クリック検知")
 
-    def drawGrid(self,pitchEditCanvas):
-       
-       # 横区切り線を描画するメソッド
 
-        # グリッド水平線を描画
-        for index in range(WHIHTE_KEYBOAD_AMOUNT):
-           
-            # 長方形の左上と右下の座標を計算
-            startX = 0
-            startY = WHIHTE_KEYBOAD_SPACE * index
-            endX = HORIZON_LENGTH
-            endY =  WHIHTE_KEYBOAD_SPACE * index
-
-            # 計算された座標に基づいて線を描画
-            pitchEditCanvas.create_line(startX,startY,endX,endY,fill="gray8",width= 1)
-
-        # グリッド垂直線を描画
-        for index in range(WHIHTE_KEYBOAD_AMOUNT):
-           
-            # 長方形の左上と右下の座標を計算
-            startX = WHIHTE_KEYBOAD_WIDTH + VERTICAL_GRID_SPACE * index
-            startY = 0
-            endX = WHIHTE_KEYBOAD_WIDTH + VERTICAL_GRID_SPACE * index
-            endY =  VERTICAL_LENGTH
-
-            # 計算された座標に基づいて線を描画
-            pitchEditCanvas.create_line(startX,startY,endX,endY,fill="gray8",width= 2)
     def mainBG(self,pitchEditCanvas):
        
-        SCALEING_FACTOR=2
 
+        SCALEING_FACTOR=2 
+         # 4オクターブ分繰り返し描画横方向の帯を発見黒鍵に対応する形の色で描画
+        for index in numpy.arange(0,5 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
+
+            pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR + index,2000,26 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR + index,2000,39 * SCALEING_FACTOR + index ),fill="gray31",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR + index,2000,52 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR + index,2000,65 * SCALEING_FACTOR + index ),fill="gray31",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR + index,2000,78 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR + index,2000,91 * SCALEING_FACTOR + index ),fill="gray31",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,91 *SCALEING_FACTOR + index,2000, 104 * SCALEING_FACTOR + index),fill="gray31",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,104*SCALEING_FACTOR + index,2000,117 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,117*SCALEING_FACTOR + index,2000,130 * SCALEING_FACTOR + index ),fill="gray31",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,130*SCALEING_FACTOR + index,2000,143 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+
+            pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1)
         
-        #for index in numpy.arange(0,88*SCALEING_FACTOR * 13,SCALEING_FACTOR * 13):
 
-        pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR,2000,13*SCALEING_FACTOR ),fill="white",width= 1)
+                # 縦線を描画するメソッド
 
-        pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR,2000,26*SCALEING_FACTOR ),fill="gray",width= 1)
+        endMidiPositionPx = 500#[px]
+        # 1小節を何ピクセルにするか定義[px]
+        PX_PER_BAR = 400
 
-        pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR,2000,39*SCALEING_FACTOR ),fill="white",width= 1)
+        #入力された最後のmidiデータから前後何小節マージンを設けるか[bar]
+        marginBar = 2
 
-        pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR,2000,52*SCALEING_FACTOR ),fill="gray",width= 1)
+        # 小節数　todo みぢデータから割り出す必要あり
+        BarAmount=10
 
-        pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR,2000,65*SCALEING_FACTOR ),fill="white",width= 1)
+        #右方向に向かってループする 小節区切り線の描画
+        for index in numpy.arange(C,L + BarAmount * PX_PER_BAR + marginBar,PX_PER_BAR):
 
-        pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR,2000,78*SCALEING_FACTOR ),fill="gray",width= 1)
+          
+            # 拍ごとの縦線を描画
+            for index2 in numpy.arange(index,index + (L + BarAmount * PX_PER_BAR + marginBar),int(PX_PER_BAR / 4)):
+                   
+                pitchEditCanvas.create_line(index2,0,index2,5000,fill="gray",width=1)
 
-        pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR,2000,91*SCALEING_FACTOR ),fill="white",width= 1)
-
-        pitchEditCanvas.create_rectangle((0,91*SCALEING_FACTOR,2000, 114*SCALEING_FACTOR),fill="white",width= 1)
-
-        pitchEditCanvas.create_rectangle((0,114*SCALEING_FACTOR,2000,27*SCALEING_FACTOR ),fill="gray",width= 1)
-
-        pitchEditCanvas.create_rectangle((0,127*SCALEING_FACTOR,2000,140*SCALEING_FACTOR ),fill="white",width= 1)
-
-        pitchEditCanvas.create_rectangle((0,140*SCALEING_FACTOR,2000,153*SCALEING_FACTOR ),fill="gray",width= 1)
-
-        pitchEditCanvas.create_rectangle((0,153*SCALEING_FACTOR,2000, 163*SCALEING_FACTOR),fill="white",width= 1)
+            pitchEditCanvas.create_line(index,0,index,5000,fill="black",width=4)#5000は十分大きさ数ならなんでもいい
 
     def drawKeyboad(self,pitchEditCanvas):
 
@@ -1705,51 +1792,50 @@ class gui:
        
   
         SCALEING_FACTOR=2
-        L=80
-        C = L*1.8
+        adjustFactor = 1
 
         # 1オクターブずつ描画
-        for index in numpy.arange(0,int(155 * SCALEING_FACTOR * 4),int(155 * SCALEING_FACTOR)):#本来は１６５ずつずらすが誤差蓄積(おそらく線の太さ)のため少し小さくしてい   
+        for index in numpy.arange(0,int(155 * SCALEING_FACTOR * 5),int(156 * SCALEING_FACTOR)):#本来は１６５ずつずらすが誤差蓄積(おそらく線の太さ)のため少し小さくしてい   
 
             # Cを描画
-            pitchEditCanvas.create_rectangle(0,int(135 * SCALEING_FACTOR + index),C,int(157.5* SCALEING_FACTOR + index),fill="azure",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(135 * SCALEING_FACTOR * adjustFactor+ index),C,int(156* SCALEING_FACTOR * adjustFactor+ index),fill="azure",width= 1)
 
             # ドの位置を（yamaha基準でなく）国際基準で表示
-            cPosition="1"
-            test = tkinter.Label(pitchEditCanvas,text=cPosition)
-            test.grid(row=0,column=0)
+            #cPosition="1"
+            #test = tkinter.Label(pitchEditCanvas,text=cPosition)
+            #test.grid(row=0,column=0)
             # Dを描画
-            pitchEditCanvas.create_rectangle(0,int(112.5 * SCALEING_FACTOR + index),C,int(135 * SCALEING_FACTOR + index),fill="azure",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(112.5 * SCALEING_FACTOR * adjustFactor+ index),C,int(135 * SCALEING_FACTOR* adjustFactor + index),fill="azure",width= 1)
 
             # Eを描画
-            pitchEditCanvas.create_rectangle(0,int(90 * SCALEING_FACTOR + index),C,int(112.5 * SCALEING_FACTOR + index),fill="azure",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(90 * SCALEING_FACTOR * adjustFactor + index),C,int(112.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Fを描画
-            pitchEditCanvas.create_rectangle(0,int(67.5 * SCALEING_FACTOR + index),C,int(90 * SCALEING_FACTOR + index),fill="azure",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(67.5 * SCALEING_FACTOR * adjustFactor + index),C,int(90 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Gを描画
-            pitchEditCanvas.create_rectangle(0,int(45 * SCALEING_FACTOR + index),C,int(67.5 * SCALEING_FACTOR + index),fill="azure",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(45 * SCALEING_FACTOR * adjustFactor + index),C,int(67.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Aを描画
-            pitchEditCanvas.create_rectangle(0,int(22.5 *SCALEING_FACTOR + index),C,int(45 * SCALEING_FACTOR + index),fill="azure",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(22.5 *SCALEING_FACTOR * adjustFactor + index),C,int(45 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Bを描画
-            pitchEditCanvas.create_rectangle(0,int(0 * SCALEING_FACTOR + index),C,int(22.5* SCALEING_FACTOR + index),fill="azure",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(0 * SCALEING_FACTOR * adjustFactor + index),C,int(22.5* SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # C#を描画
-            pitchEditCanvas.create_rectangle(0,int(130.5 * SCALEING_FACTOR + index),L,int(144.5 * SCALEING_FACTOR + index),fill="black",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(130.5 * SCALEING_FACTOR * adjustFactor + index),L,int(144.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # D#を描画
-            pitchEditCanvas.create_rectangle(0,int(103.5 * SCALEING_FACTOR + index),L,int(117.5 * SCALEING_FACTOR + index),fill="black",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(103.5 * SCALEING_FACTOR * adjustFactor + index),L,int(117.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # F#を描画
-            pitchEditCanvas.create_rectangle(0,int(64 * SCALEING_FACTOR + index),L,int(78 * SCALEING_FACTOR + index),fill="black",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(64 * SCALEING_FACTOR * adjustFactor + index),L,int(78 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # G#を描画
-            pitchEditCanvas.create_rectangle(0,int(38 * SCALEING_FACTOR + index),L,int(52 * SCALEING_FACTOR + index),fill="black",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(38 * SCALEING_FACTOR * adjustFactor + index),L,int(52 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
    
             # A#を描画
-            pitchEditCanvas.create_rectangle(0,int(12 * SCALEING_FACTOR + index),L,int(26 * SCALEING_FACTOR + index),fill="black",width= 1)
+            pitchEditCanvas.create_rectangle(0,int(12 * SCALEING_FACTOR * adjustFactor + index),L,int(26 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
           
     def recordSound(self,applicationData,preprocessFrame):
