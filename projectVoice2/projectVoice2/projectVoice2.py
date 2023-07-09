@@ -243,9 +243,32 @@ class midi():
             #return None
 
         return count
+    def draw_Midis(self,midiData,selectedTruck):
 
-    def import_Midi(self):
-   
+        # 指定されたmidiファイルのトラックを元に画面にノートを表示するメソッド
+        
+        # キャンバスを作成
+        canvas = tkinter.Canvas(root,bg="white")
+
+        id = canvas.create_rectangle(20,10,280,190,fill = "blue2",width=1)
+
+        print(selectedTruck)
+
+    def kill_window(self,dlg_modal):
+        
+        #　ウィンドウを消す
+        dlg_modal.destroy()
+
+    def get_Index(event):
+
+        # 選択された要素を変数にする
+        selectedTruck = event.widget.curselection[0]
+
+        print("選択トラックは",selectedTruck)
+
+        return selectedTruck
+    def select_midi_track(self):
+
         # 読み込んだを時間vs周波数と時間vs継続長のデータに変換するメソッド
         # タイプの設定
         type = [('MIDI','*.mid')]
@@ -257,16 +280,16 @@ class midi():
         midiData = mido.MidiFile(readMidiData,clip=True)
 
         # midiの生データ確表示デバッグ用
-        print(midiData)
+        #print(midiData)
 
         # 複数のトラックからどのトラックを編集対象とするか選択させる為にダイアログを表示
         dlg_modal = tkinter.Toplevel()
 
         # ウィンドウの名前の指定
-        dlg_modal.title("編集対象のmidiトラックを選択")
+        dlg_modal.title("読み込むトラックを選択")
 
         # ダイアログのサイズの指定
-        dlg_modal.geometry("300x300")
+        dlg_modal.geometry("200x300")
 
         # ウィンドウをモーダルにする
         dlg_modal.grab_set()
@@ -274,28 +297,60 @@ class midi():
         # 新しく作ったダイアログにフォーカスを移す
         dlg_modal.focus_set()
 
-        # デバッグ用テスト表示
-        print(midiData.tracks)
-        # 新しく作ったウィンドウをタスクバーに表示しない設定にする
-        #dlg_modal.transient(master)
         
-        
-        for index in numpy.arange(0,len(midiData.tracks),1):
-            print(self.countNotes(midiData,index))
-
         # ダイアログ中のトップフレームを作成
-        dlgTop = tkinter.Frame(dlg_modal,width="300",height="300")
-        # リストボックスの作成
-        listBox = tkinter.Listbox(dlg_modal,width = 20,selectmode="single")
+        dlgTop = tkinter.Frame(dlg_modal,width="300",height="300",bg="gray33")
+
+        dlgTop.grid(row=0,column=0)
+
+  
+
+         # リストボックスの選択肢を作成
+        trackList=[]
         
-        # リストボックスの選択肢を作成
-        displayList=('1','2')
+        # 各トラックのメッセージ数をカウントしてリストに追加
+        for index in numpy.arange(0,len(midiData.tracks),1):
+            addData = index ,' :音符の総数',self.countNotes(midiData,index)
+            
+            trackList.append(addData)
 
-        var = tkinter.StringVar(value = displayList)
+        v1 = tkinter.StringVar(value = trackList)
 
-        listbox = tkinter.Listbox(dlgTop,listvariable=var)
+        # リストボックスの作成
+        listBox = tkinter.Listbox(dlgTop,width = 20,selectmode=tkinter.SINGLE,listvariable=v1)
+        
+        #listBox.bind("<<ListboxSelect>>",midi.get_Index)
+
+                # 選択された要素を変数にする
+        selectedTruck = listBox.curselection()
+
+        print(selectedTruck)
+        # スクロールバーの作成
+        scrollbar = ttk.Scrollbar(dlgTop,orient="vertical",command=listBox.yview)
+
+        # スクロールバーの機能化
+        listBox['yscrollcommand']= scrollbar.set
+
+        # スクロールバーの配置
+        scrollbar.grid(row=0,column=1,sticky=(tkinter.N, tkinter.S))
+
+        # リストボックスを配置
+        listBox.grid(row=0,column=0)
+
+
+        # ボタンの作成
+        okButton = ttk.Button(dlgTop ,text = "読み込み",command=lambda:[midi.get_Index,midi.draw_Midis(midiData,selectedTruck),midi.kill_window(dlg_modal)])
+        
+        # ボタンの配置
+        okButton.grid(row=1,column=0)
+
+    def import_Midi(self):
+   
+        
+
         # midiデータからビートあたりのティック数を読み込み
         ticksPerBeat = midiData.ticks_per_beat
+
 
         # 1
         #msPerTicks = S_PER_BEAT * tempo ticksPerBeat / 1000
@@ -1194,6 +1249,7 @@ class gui:
            
 
     def drawComposerDisplay(self,applicationFormat,application):
+
         ##############################################　楽曲クリエーター用画面 ####################################
 
         # 全体を包むフレームを作成
@@ -1279,11 +1335,13 @@ class gui:
         # 列方向にめいいっぱいに広げる　
         paramCanvas.grid_columnconfigure(0,weight = 1)
 
+
+
         # パラメタ部の垂直方向スクロールバーを作成
-        #paramYbar = tkinter.Scrollbar(paramCanvas,orient = tkinter.VERTICAL)
+        paramYbar = tkinter.Scrollbar(paramCanvas,orient = tkinter.VERTICAL)
 
         # パラメタ部のスクロールバーを配置
-        #paramYbar.grid(row = 0,column = 1,sticky = tkinter.N + tkinter.S)
+        paramYbar.grid(row = 0,column = 1,sticky = tkinter.N + tkinter.S)
 
         # 列方向にめいいっぱいに広げる　
         #paramCanvas.grid_columnconfigure(0,weight = 1)
@@ -1307,26 +1365,44 @@ class gui:
         # 右側のフレームを配置
         optionFrame.grid(row = 0,column = 1,rowspan = 2)
 
-        # 右側のフレームをを配置
-        optionFrame.grid(row = 0,column = 1,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
+        # 右側のフレームをを配置 いらないはず
+       # optionFrame.grid(row = 0,column = 1,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
 
+        # 一番上のフレームの作成
+        personalityFrame = tkinter.Frame(optionFrame,width="200",height="200",bg="gray33")
+        
+        # 一番上のフレームを配置
+        personalityFrame.grid(row=0,column=0)
+
+        # 一番上のフレームのサイズの自動調整機能をオフ
+        personalityFrame.grid_propagate(False)
 
         # 音源読み込みボタンの作成
-        lyricIncertButton = tkinter.Button(optionFrame,text ="音源パーソナリティを読み込み",width=10,height=2)
+        lyricIncertButton = tkinter.Button(optionFrame,text ="音源パーソナリティを読み込み",width=13,height=8)
 
         # ボタンの配置
         lyricIncertButton.grid(row=0,column=0)
 
 
+
+        # 2番上のフレームの作成
+        operateFrame = tkinter.Frame(optionFrame,width="200",height="200",bg="gray13")
+        
+        # 2番上のフレームを配置
+        operateFrame.grid(row=1,column=0)
+
+        # 2番上のフレームのサイズの自動調整機能をオフ
+        operateFrame.grid_propagate(False)
+
        
         # BPMのラベルを作成
-        bpmLabel = tkinter.Label(optionFrame,text="BPM")
+        bpmLabel = tkinter.Label(operateFrame,text="BPM",bg="gray13",fg="white")
 
         # ＢbpmLabelＭのラベルを配置
         bpmLabel.grid(row=1,column=0,sticky=tkinter.W)
 
         # 4拍子か３拍子か変拍子（←これはtodo）を
-        beatTypeLabel = tkinter.Label(optionFrame,text="拍子の種類")
+        beatTypeLabel = tkinter.Label(operateFrame,text="拍子の種類",fg="white",bg="gray13")
 
         # ＢbpmLabelＭのラベルを配置
         beatTypeLabel.grid(row=2,column=0,sticky=tkinter.W)
@@ -1335,35 +1411,45 @@ class gui:
         beatTyopes = ("４拍子","３拍子","変拍子（未実装）")
         
         # 拍子の設定用コンボボックスの作成
-        beatTypeCombo = ttk.Combobox(optionFrame,width=6,height=1,values = beatTyopes)
+        beatTypeCombo = ttk.Combobox(operateFrame,width=6,height=1,values = beatTyopes)
 
         # midi編集時のスナップ間隔を示すラベルの定義
-        snapIntervalLabel = tkinter.Label(optionFrame,text="midi操作時のスナップ間隔")
+        snapIntervalLabel = tkinter.Label(operateFrame,text="midi操作時のスナップ間隔",fg="white",bg="gray13")
 
 
         # スナップの粗さを示すリストを定義
         snapTyopes = ("４分音符","８分音符","１６音符","32分音符","フリー")
         
         # スナップ設定用コンボボックスの作成
-        snapTypeCombo = ttk.Combobox(optionFrame,width=6,height=1,values = snapTyopes)
+        snapTypeCombo = ttk.Combobox(operateFrame,width=6,height=1,values = snapTyopes)
 
         # スナップ用のラベルを配置
         snapIntervalLabel.grid(row=2,column=0,sticky=tkinter.W)
 
+
+        # 3番上のフレームの作成
+        lylicsFrame = tkinter.Frame(optionFrame,width="200",height="200",bg="gray33")
+        
+        # 3番上のフレームを配置
+        lylicsFrame.grid(row=2,column=0)
+
+        # 3番上のフレームのサイズの自動調整機能をオフ
+        lylicsFrame.grid_propagate(False)
+
         # 歌詞のラベルを作成
-        lblLyric = tkinter.Label(optionFrame,text="歌詞")
+        lblLyric = tkinter.Label(lylicsFrame,text="歌詞",bg="gray33",fg="white")
 
         # 歌詞のラベルを配置
         lblLyric.grid(row=0,column=0,sticky=tkinter.W)
 
         # 歌詞入力用のテキストエントリを作る
-        lyricText = tkinter.Entry(optionFrame,width=30)
+        lyricText = tkinter.Entry(lylicsFrame,width=30)
 
         # 歌詞入力エントリを配置
         lyricText.grid(row=1,column=0)
 
         # 歌詞読み込みボタンの作成
-        lyricIncertButton = tkinter.Button(optionFrame,text ="歌詞流し込み",width=10,height=2)
+        lyricIncertButton = tkinter.Button(lylicsFrame,text ="歌詞流し込み",width=10,height=2)
 
         # ボタンの配置
         lyricIncertButton.grid(row=2,column=0,sticky=tkinter.W)
@@ -1371,11 +1457,18 @@ class gui:
         # 入力文字を取得
         lyricData = lyricText.get()
 
-        print(lyricData)
 
+        # 4番上のフレームの作成
+        generateFrame = tkinter.Frame(optionFrame,width="200",height="200",bg="gray13")
+        
+        # 4番上のフレームを配置
+        generateFrame.grid(row=3,column=0)
+
+        # 4番上のフレームのサイズの自動調整機能をオフ
+        generateFrame.grid_propagate(False)
 
         # クリエイトボイスボタンの作成
-        createButton = tkinter.Button(optionFrame,text ="生成",width=10,height=2)
+        createButton = tkinter.Button(generateFrame,text ="生成",width=10,height=2)
 
         # ボタンの配置
         createButton.grid(row=3,column=0)
@@ -1675,7 +1768,7 @@ class gui:
         menu_import.add_separator()
 
         # 子要素（midi読み込み)を設置
-        menu_import.add_command(label='MIDI', command = midi.import_Midi)
+        menu_import.add_command(label='MIDI', command = midi.select_midi_track)
         menu_import.add_separator()
 
         # 子要素（wav読み込み)を設置
