@@ -209,18 +209,6 @@ class recordAudio():
 class midi():
 
     # midiデータに関係するクラス
-   
-    def startMidDrag(event):
-        global isClicking
-        global cousolPosX
-        global cousolPosY
-
-        # クリックしてる時のイベントハンドラなのでフラグを立てる
-        isClicking
-
-        # 現在のマウスの位置を記憶
-        oldCourslePosX = event.x
-        oldCourslePosy = event.y
 
     def countNotes(self,midiFile,trackNumber):
 
@@ -248,11 +236,12 @@ class midi():
         # 指定されたmidiファイルのトラックを元に画面にノートを表示するメソッド
         
         # キャンバスを作成
-        canvas = tkinter.Canvas(root,bg="white")
+        #canvas = tkinter.Canvas(root,bg="white")
 
-        id = canvas.create_rectangle(20,10,280,190,fill = "blue2",width=1)
+        #id = canvas.create_rectangle(20,10,280,190,fill = "blue2",width=1)
 
-        print(selectedTruck)
+       # print(selectedTruck)
+       pass
 
     def kill_window(self,dlg_modal):
         
@@ -1251,7 +1240,7 @@ class gui:
     def drawComposerDisplay(self,applicationFormat,application):
 
         ##############################################　楽曲クリエーター用画面 ####################################
-
+        global pitchEditCanvas
         # 全体を包むフレームを作成
         totalFrame = tkinter.Frame(application.window)
 
@@ -1344,7 +1333,7 @@ class gui:
         paramYbar.grid(row = 0,column = 1,sticky = tkinter.N + tkinter.S)
 
         # 列方向にめいいっぱいに広げる　
-        #paramCanvas.grid_columnconfigure(0,weight = 1)
+        paramCanvas.grid_rowconfigure(0,weight = 1)
 
 
 
@@ -1690,15 +1679,7 @@ class gui:
         return saveData
 
     def drawFrames(self):
-       
- 
-        totalFrame.tkraise()
-   
-    def MidDrag(event):
-       
-        # ドラッグ中の移動処理を記述する関数
-        pass
-       
+       pass
     def endMidDrag(event):
 
         # ドラッグが終わった時のイベントハンドラ
@@ -1823,12 +1804,44 @@ class gui:
         # クリック検出時の処理を定義するメソッド
         print("クリック検知")
 
+    def click(self,event):
+
+        # ノート（を示す長方形が）がクリックされた時の処理
+        
+        global oldX,oldY
+        global selectedNoteFig
+        
+        # カーソルのｘ、ｙ座標を取得
+        currentX = event.x
+        currentY = event.y
+
+        # クリック位置から一番違い図形ＩＤ取得
+        selectedNoteFig = pitchEditCanvas.find_closest(currentX,currentY)
+
+        # 相対移動処理が終わったので現在のｘ、ｙ座標を１つ前時刻のｘ、ｙ座標として記録
+        oldX = currentX 
+        oldY = currentY
+
+    def drag(self,event):
+
+        global oldX,oldY
+
+        # カーソルのｘ、ｙ座標を取得
+        currentX = event.x
+        currentY = event.y
+
+        # 前回のマウスからの移動量だけ図形を相対移動
+        pitchEditCanvas.move(selectedNoteFig,currentX - oldX,currentY - oldY)
+
+        # 相対移動処理が終わったので現在のｘ、ｙ座標を１つ前時刻のｘ、ｙ座標として記録
+        oldX = currentX 
+        oldY = currentY
 
     def mainBG(self,pitchEditCanvas):
        
 
         SCALEING_FACTOR=2 
-         # 4オクターブ分繰り返し描画横方向の帯を発見黒鍵に対応する形の色で描画
+         # 4オクターブ分繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画
         for index in numpy.arange(0,5 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
 
             pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1)
@@ -1855,9 +1868,18 @@ class gui:
 
             pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1)
         
+            noteAmount=10 #todo 仮
+           
+            # 音符の数だけ長方形を描画
+            for index in numpy.arange(0,noteAmount,1):
+
+                notes = pitchEditCanvas.create_rectangle(100,100,200,200,fill="blue2")
 
                 # 縦線を描画するメソッド
 
+                # 描画した図形にイベント処理設定
+                pitchEditCanvas.tag_bind(notes,"<ButtonPress-1>",application.click)
+                pitchEditCanvas.tag_bind(notes,"<Button1-Motion>",application.drag)
         endMidiPositionPx = 500#[px]
         # 1小節を何ピクセルにするか定義[px]
         PX_PER_BAR = 400
@@ -1874,7 +1896,8 @@ class gui:
           
             # 拍ごとの縦線を描画
             for index2 in numpy.arange(index,index + (L + BarAmount * PX_PER_BAR + marginBar),int(PX_PER_BAR / 4)):
-                   
+                
+                # 長方形を描画
                 pitchEditCanvas.create_line(index2,0,index2,5000,fill="gray",width=1)
 
             pitchEditCanvas.create_line(index,0,index,5000,fill="black",width=4)#5000は十分大きさ数ならなんでもいい
@@ -2016,6 +2039,9 @@ class gui:
        
         # 音声編集画面の描画
         application.drawSourceCreaterDisplay(applicationFormat,application,big)
+
+# ウィジェット変数を定義
+# 音符を示す長方形をグローバル変数として定義
 
 # 本ソフトが内部データとして格納　保存するデータ形式を定義したインスタンスを生成
 applicationFormat= applicationDataFormat()
