@@ -247,15 +247,7 @@ class midi():
         
         #　ウィンドウを消す
         dlg_modal.destroy()
-
-    def get_Index(event):
-
-        # 選択された要素を変数にする
-        selectedTruck = event.widget.curselection[0]
-
-        print("選択トラックは",selectedTruck)
-
-        return selectedTruck
+    
     def select_midi_track(self):
 
         # 読み込んだを時間vs周波数と時間vs継続長のデータに変換するメソッド
@@ -269,7 +261,7 @@ class midi():
         midiData = mido.MidiFile(readMidiData,clip=True)
 
         # midiの生データ確表示デバッグ用
-        #print(midiData)
+        print(midiData)
 
         # 複数のトラックからどのトラックを編集対象とするか選択させる為にダイアログを表示
         dlg_modal = tkinter.Toplevel()
@@ -292,15 +284,15 @@ class midi():
 
         dlgTop.grid(row=0,column=0)
 
-  
-
-         # リストボックスの選択肢を作成
+        # リストボックスの選択肢を作成
         trackList=[]
         
+
         # 各トラックのメッセージ数をカウントしてリストに追加
         for index in numpy.arange(0,len(midiData.tracks),1):
-            addData = index ,' :音符の総数',self.countNotes(midiData,index)
-            
+            addData = int(self.countNotes(midiData,index))
+            # addData = index ,' :音符の総数',self.countNotes(midiData,index)
+           
             trackList.append(addData)
 
         v1 = tkinter.StringVar(value = trackList)
@@ -308,12 +300,9 @@ class midi():
         # リストボックスの作成
         listBox = tkinter.Listbox(dlgTop,width = 20,selectmode=tkinter.SINGLE,listvariable=v1)
         
-        #listBox.bind("<<ListboxSelect>>",midi.get_Index)
-
-                # 選択された要素を変数にする
-        selectedTruck = listBox.curselection()
-
-        print(selectedTruck)
+        # リストボックスをバインド
+        listBox.bind("<<ListboxSelect>>",midi.get_Truck_Index)
+       
         # スクロールバーの作成
         scrollbar = ttk.Scrollbar(dlgTop,orient="vertical",command=listBox.yview)
 
@@ -327,11 +316,31 @@ class midi():
         listBox.grid(row=0,column=0)
 
 
+
+        # ウィジェット変数をint型に変更して数字だけ抽出
+        targetTruck = selectedTruck.get()
+        print("d",targetTruck)
+       # targetTruck = tmp[0]
+        #print(targetTruck)
+
         # ボタンの作成
-        okButton = ttk.Button(dlgTop ,text = "読み込み",command=lambda:[midi.get_Index,midi.draw_Midis(midiData,selectedTruck),midi.kill_window(dlg_modal)])
+        okButton = ttk.Button(dlgTop ,text = "読み込み",command=lambda:[midi.draw_Midis(midiData,targetTruck),midi.kill_window(dlg_modal)])
         
         # ボタンの配置
         okButton.grid(row=1,column=0)
+
+    def get_Truck_Index(self,event):
+
+        # 選択された要素を変数にする
+        print("a",event.widget.curselection())
+        test = event.widget.curselection()
+
+        print("b",test[0])
+
+        targetTruck = int(test[0])
+
+        print("c",targetTruck)
+        selectedTruck.set(targetTruck)
 
     def import_Midi(self):
    
@@ -1251,7 +1260,7 @@ class gui:
         mainParamaterWindow = tkinter.PanedWindow(application.window,orient = tkinter.VERTICAL)
 
         # ピッチ編集部とパラメタ編集部を含む部分のフレームを作成
-        mainFrame = tkinter.Frame(application.window,height=100,bg = 'orange',bd = 0)
+        mainFrame = tkinter.Frame(application.window,height=1100,bg = 'orange',bd = 0)
        
         # ピッチとパラメタが合わさった部分を列方向にめいいっぱいに広げる　
         mainFrame.grid_columnconfigure(0,weight = 1)
@@ -1260,7 +1269,7 @@ class gui:
         mainFrame.grid_rowconfigure(0,weight = 1)
 
         # ピッチ編集部のキャンバスを作成
-        pitchEditCanvas = tkinter.Canvas(mainFrame,width = 100,height=400,bg = "white",bd = 0,relief = 'flat',scrollregion =(0,0,1600,1000))
+        pitchEditCanvas = tkinter.Canvas(mainFrame,width = 100,height=1100,bg = "white",bd = 0,relief = 'flat',scrollregion =(0,0,1600,1000))
 
         # ピッチ編集部キャンバスを配置
         pitchEditCanvas.grid(row =0 ,column = 0,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
@@ -1303,7 +1312,7 @@ class gui:
         pitchEditCanvas.config(yscrollcommand = pitchYbar.set)
    
         # パラメータのフレームを作成
-        paramatorFrame = tkinter.Frame(application.window,bg = "gray",bd = 2)
+        paramatorFrame = tkinter.Frame(application.window,bg = "gray",bd = 2,height=100)
 
         # フレームはスクロール出来ないので内側にキャンバスを作成(パラメタキャンバスと呼称)
         paramCanvas = tkinter.Canvas(paramatorFrame,bg = 'gray10',relief = 'flat', bd = 1)
@@ -1387,8 +1396,14 @@ class gui:
         # BPMのラベルを作成
         bpmLabel = tkinter.Label(operateFrame,text="BPM",bg="gray13",fg="white")
 
-        # ＢbpmLabelＭのラベルを配置
-        bpmLabel.grid(row=1,column=0,sticky=tkinter.W)
+        # ＢPＭのラベルを配置
+        bpmLabel.grid(row=0,column=0,sticky=tkinter.W)
+
+        # bpmを表示（必要なら修正）
+        bpmText = tkinter.Entry(operateFrame,width = 10)
+
+        # bpm表示（修正）をグリッドで表示
+        bpmText.grid(row =1,column = 0)
 
         # 4拍子か３拍子か変拍子（←これはtodo）を
         beatTypeLabel = tkinter.Label(operateFrame,text="拍子の種類",fg="white",bg="gray13")
@@ -1402,18 +1417,23 @@ class gui:
         # 拍子の設定用コンボボックスの作成
         beatTypeCombo = ttk.Combobox(operateFrame,width=6,height=1,values = beatTyopes)
 
+        # 拍の種類のコンボボックスを配置
+        beatTypeCombo.grid(row=3,column=0)
+
         # midi編集時のスナップ間隔を示すラベルの定義
         snapIntervalLabel = tkinter.Label(operateFrame,text="midi操作時のスナップ間隔",fg="white",bg="gray13")
 
+        # スナップ用のラベルを配置
+        snapIntervalLabel.grid(row=4,column=0)
 
         # スナップの粗さを示すリストを定義
-        snapTyopes = ("４分音符","８分音符","１６音符","32分音符","フリー")
+        snapTyopes = ("４分音符","８分音符","１６音符","３２分音符","フリー")
         
         # スナップ設定用コンボボックスの作成
-        snapTypeCombo = ttk.Combobox(operateFrame,width=6,height=1,values = snapTyopes)
+        snapTypeCombo = ttk.Combobox(operateFrame,width=10,height=3,values = snapTyopes,textvariable = snapAmount)
 
-        # スナップ用のラベルを配置
-        snapIntervalLabel.grid(row=2,column=0,sticky=tkinter.W)
+        # スナップ設定用コンボボックスを配置
+        snapTypeCombo.grid(row=5,column=0)
 
 
         # 3番上のフレームの作成
@@ -1803,6 +1823,11 @@ class gui:
 
         # クリック検出時の処理を定義するメソッド
         print("クリック検知")
+    
+    def noteTrance():
+        pass
+    def noteScale():
+        pass
 
     def click(self,event):
 
@@ -1836,15 +1861,30 @@ class gui:
         # 相対移動処理が終わったので現在のｘ、ｙ座標を１つ前時刻のｘ、ｙ座標として記録
         oldX = currentX 
         oldY = currentY
+    
+    
+    def tranceNote(self,pitchEditCanvas,afterNoteNumber, noteId):#,targetCanvas,afterNoteNumber noteId
+
+        # 全てのノートが初期値でノート番号１１９全音符1小節目にあるのでそこから移動させるメソッド
+
+        # 白鍵黒鍵合わせた鍵盤単位の相対移動距離を整数で求める
+        relativeDistance = (119 - afterNoteNumber ) * 13 # 13は仮　todo
+
+        print(noteId,relativeDistance)
+        # 相対距離[px]を指定して移動
+        pitchEditCanvas.move(noteId,0,relativeDistance)
+    
 
     def mainBG(self,pitchEditCanvas):
        
 
         SCALEING_FACTOR=2 
-         # 4オクターブ分繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画
-        for index in numpy.arange(0,5 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
+         # 10オクターブ分(厳密にはノート番号０から１１９まで扱う)繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画 上から順番に描画している　2000は十分大きな数字ならなんでもよい
+        for index in numpy.arange(0,10 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
 
-            pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1)
+            # Bに相当する領域について
+
+            pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1,tag=("noteNumber",""))
 
             pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR + index,2000,26 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
 
@@ -1868,19 +1908,37 @@ class gui:
 
             pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1)
         
-            noteAmount=10 #todo 仮
+            noteAmount=1 #todo 仮
            
-            # 音符の数だけ長方形を描画
-            for index in numpy.arange(0,noteAmount,1):
 
-                notes = pitchEditCanvas.create_rectangle(100,100,200,200,fill="blue2")
+        # 1小節を何ピクセルにするか定義[px]
+        PX_PER_BAR = 400
 
-                # 縦線を描画するメソッド
+        # 音符の数だけ長方形を描画
+        for index in numpy.arange(0,noteAmount,1):
 
-                # 描画した図形にイベント処理設定
-                pitchEditCanvas.tag_bind(notes,"<ButtonPress-1>",application.click)
-                pitchEditCanvas.tag_bind(notes,"<Button1-Motion>",application.drag)
+            # 当該ノートのID名を作る
+            idName = "noteid" + str(index)
+
+            # デフォルトでノート番号１１９に全音符に1小節から配置
+            notes = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag=idName)
+
+            # 描画した図形にイベント処理設定
+            pitchEditCanvas.tag_bind(idName,"<ButtonPress-1>",application.click)
+            pitchEditCanvas.tag_bind(idName,"<Button1-Motion>",application.drag)
+
+        # デフォルトでノート番号１１９に全音符に1小節から配置
+        #notes = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag="0")
+
+        # テスト
+        application.tranceNote(pitchEditCanvas,118,"noteid" + str(1))
+        # 縦線を描画するメソッド
+
+
+
+
         endMidiPositionPx = 500#[px]
+
         # 1小節を何ピクセルにするか定義[px]
         PX_PER_BAR = 400
 
@@ -1901,6 +1959,16 @@ class gui:
                 pitchEditCanvas.create_line(index2,0,index2,5000,fill="gray",width=1)
 
             pitchEditCanvas.create_line(index,0,index,5000,fill="black",width=4)#5000は十分大きさ数ならなんでもいい
+    
+
+
+    def setPositionFromNotenumber(sele,noteNumber):
+
+        # ノートナンバーを受け取ってディスプレイ（グリッド）上の座標を返すメソッド
+        pass
+
+
+
 
     def drawKeyboad(self,pitchEditCanvas):
 
@@ -2040,10 +2108,11 @@ class gui:
         # 音声編集画面の描画
         application.drawSourceCreaterDisplay(applicationFormat,application,big)
 
-# ウィジェット変数を定義
+
+
 # 音符を示す長方形をグローバル変数として定義
 
-# 本ソフトが内部データとして格納　保存するデータ形式を定義したインスタンスを生成
+# 本ソフトが内部データとして格納　保存するデータ形式を定義したインスタンスを生成 todo 危険なのでいつか修正したい
 applicationFormat= applicationDataFormat()
 
 # guiクラスのインスタンスを生成
@@ -2051,6 +2120,13 @@ application = gui()
 
 # midi関連クラスのインスタンス生成
 midi = midi()
+
+# ウィジェット変数を定義
+# midiデータ中の選択されたトラック（０からカウント）を格納するウィジェット変数を定義
+selectedTruck = tkinter.IntVar()
+
+# スナップの間隔をintで格納するウィジェット変数を定義
+snapAmount = tkinter.IntVar()
 
 # 使用フォントを定義
 big =ft.Font(size=20)
