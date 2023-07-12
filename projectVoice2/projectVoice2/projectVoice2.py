@@ -1634,7 +1634,6 @@ class gui:
         #アトリビュートを追加
         setattr(applicationFormat,"WavExist",True)
        
-
     def drawFigAsFrame(self,loadData,index):
 
         # フレームに図を描画す.るメソッド
@@ -1698,8 +1697,6 @@ class gui:
     def collectData(saveData):
         return saveData
 
-    def drawFrames(self):
-       pass
     def endMidDrag(event):
 
         # ドラッグが終わった時のイベントハンドラ
@@ -1725,7 +1722,6 @@ class gui:
        
         SCMmainFrame.tkraise()
 
-   
     def changeMode2EditSound(self,application):
        
         # 音声編集画面に画面を切り替えるメソッド
@@ -1847,14 +1843,17 @@ class gui:
         oldX = currentX 
         oldY = currentY
 
-    def drag(self,event):
+    def drag(self,event,pitchEditCanvas):
 
         global oldX,oldY
 
         # カーソルのｘ、ｙ座標を取得
         currentX = event.x
         currentY = event.y
-
+        
+        # クリック位置から一番違い図形ＩＤ取得
+        test = pitchEditCanvas.find_closest(currentX,currentY)
+        print(test)
         # 前回のマウスからの移動量だけ図形を相対移動
         pitchEditCanvas.move(selectedNoteFig,currentX - oldX,currentY - oldY)
 
@@ -1863,50 +1862,67 @@ class gui:
         oldY = currentY
     
     
-    def tranceNote(self,pitchEditCanvas,afterNoteNumber, noteId):#,targetCanvas,afterNoteNumber noteId
+    def tranceNote(self,event,pitchEditCanvas,afterNoteNumber, noteId,scalingFactorVertical):
 
         # 全てのノートが初期値でノート番号１１９全音符1小節目にあるのでそこから移動させるメソッド
 
         # 白鍵黒鍵合わせた鍵盤単位の相対移動距離を整数で求める
-        relativeDistance = (119 - afterNoteNumber ) * 13 # 13は仮　todo
-
-        print(noteId,relativeDistance)
+        relativeDistance = (119 - afterNoteNumber ) * 13 * scalingFactorVertical# 13は仮　todo 鍵盤配置が厳密にはオクターブで1ピクセルくらいずれてるのでここ
+        
+        print(noteId +relativeDistance)
+        
         # 相対距離[px]を指定して移動
         pitchEditCanvas.move(noteId,0,relativeDistance)
     
+    def doubleClicked(self,event,noteId):
+
+        # ダブルクリックされたらノートを削除（見た目だけ）するメソッド
+        event.widget.delete(noteId)
 
     def mainBG(self,pitchEditCanvas):
        
-
         SCALEING_FACTOR=2 
-         # 10オクターブ分(厳密にはノート番号０から１１９まで扱う)繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画 上から順番に描画している　2000は十分大きな数字ならなんでもよい
+        scalingFactorVertical = SCALEING_FACTOR  #上の置き換えtodo　かつ上下方向のみのスケーリングパラメータ
+        
+        # 10オクターブ分(厳密にはノート番号０から１１９まで扱う)繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画 上から順番に描画している　2000は十分大きな数字ならなんでもよい
         for index in numpy.arange(0,10 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
 
             # Bに相当する領域について
+            #tagNameB = str(index)
+            bgs = pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1,tag = "B")
 
-            pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1,tag=("noteNumber",""))
+            # Bbに相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR + index,2000,26 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = "Bminus")
 
-            pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR + index,2000,26 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+            # Aに相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR + index,2000,39 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = "A")
 
-            pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR + index,2000,39 * SCALEING_FACTOR + index ),fill="gray31",width= 1)
+            # G#に相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR + index,2000,52 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = "Gplus")
 
-            pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR + index,2000,52 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+            # Gに相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR + index,2000,65 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = "G")
 
-            pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR + index,2000,65 * SCALEING_FACTOR + index ),fill="gray31",width= 1)
+            # F#に相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR + index,2000,78 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = "Fplus")
 
-            pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR + index,2000,78 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+            # Fに相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR + index,2000,91 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = "F")
 
-            pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR + index,2000,91 * SCALEING_FACTOR + index ),fill="gray31",width= 1)
+            # Eに相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,91 *SCALEING_FACTOR + index,2000, 104 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = "E")
 
-            pitchEditCanvas.create_rectangle((0,91 *SCALEING_FACTOR + index,2000, 104 * SCALEING_FACTOR + index),fill="gray31",width= 1)
+            # Ebに相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,104*SCALEING_FACTOR + index,2000,117 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = "Eminus")
 
-            pitchEditCanvas.create_rectangle((0,104*SCALEING_FACTOR + index,2000,117 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
+            # Dに相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,117*SCALEING_FACTOR + index,2000,130 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = "D")
 
-            pitchEditCanvas.create_rectangle((0,117*SCALEING_FACTOR + index,2000,130 * SCALEING_FACTOR + index ),fill="gray31",width= 1)
+            # C#に相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,130*SCALEING_FACTOR + index,2000,143 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = "Cplus")
 
-            pitchEditCanvas.create_rectangle((0,130*SCALEING_FACTOR + index,2000,143 * SCALEING_FACTOR + index ),fill="gray21",width= 1)
-
-            pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1)
+            # Cに相当する領域について
+            bgs = pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = "C")
         
             noteAmount=1 #todo 仮
            
@@ -1914,24 +1930,31 @@ class gui:
         # 1小節を何ピクセルにするか定義[px]
         PX_PER_BAR = 400
 
-        # 音符の数だけ長方形を描画
+        # 音符の数だけ長方形を描画  仮
         for index in numpy.arange(0,noteAmount,1):
 
             # 当該ノートのID名を作る
-            idName = "noteid" + str(index)
+            noteId = "noteId" + str(index)
 
             # デフォルトでノート番号１１９に全音符に1小節から配置
-            notes = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag=idName)
+            notes = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag=noteId)
 
+            
             # 描画した図形にイベント処理設定
-            pitchEditCanvas.tag_bind(idName,"<ButtonPress-1>",application.click)
-            pitchEditCanvas.tag_bind(idName,"<Button1-Motion>",application.drag)
+            #クリックした時の処理を紐づけ
+            pitchEditCanvas.tag_bind(noteId,"<ButtonPress-1>",application.click)
+            
+            # ドラッグした時の処理を紐づけ（移動）
+            pitchEditCanvas.tag_bind(noteId,"<Button1-Motion>",lambda event:application.drag(event,pitchEditCanvas))
 
-        # デフォルトでノート番号１１９に全音符に1小節から配置
-        #notes = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag="0")
-
-        # テスト
-        application.tranceNote(pitchEditCanvas,118,"noteid" + str(1))
+            # ダブルクリックした時の処理を紐づけ（削除）
+            pitchEditCanvas.tag_bind(noteId,"<Double-ButtonPress-1>",lambda event : application.doubleClicked(event,noteId))
+       
+            # 下矢印で１つノートを移動させる紐づけ（移動）
+            pitchEditCanvas.tag_bind(noteId,"<KeyPress-Down>",lambda event : application.tranceNote(event,pitchEditCanvas,117,noteId,scalingFactorVertical))
+        
+            # テスト１移動
+        #application.tranceNote(pitchEditCanvas,118,"noteId" + str(0),scalingFactorVertical)
         # 縦線を描画するメソッド
 
 
@@ -1950,14 +1973,14 @@ class gui:
 
         #右方向に向かってループする 小節区切り線の描画
         for index in numpy.arange(C,L + BarAmount * PX_PER_BAR + marginBar,PX_PER_BAR):
-
-          
+  
             # 拍ごとの縦線を描画
             for index2 in numpy.arange(index,index + (L + BarAmount * PX_PER_BAR + marginBar),int(PX_PER_BAR / 4)):
                 
                 # 長方形を描画
                 pitchEditCanvas.create_line(index2,0,index2,5000,fill="gray",width=1)
-
+            
+            # 線をひく
             pitchEditCanvas.create_line(index,0,index,5000,fill="black",width=4)#5000は十分大きさ数ならなんでもいい
     
 
