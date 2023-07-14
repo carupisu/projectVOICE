@@ -13,22 +13,22 @@ import mido
 import torchaudio
 import matplotlib.pyplot as plt
 import time
-import simpleaudio
+#import simpleaudio
 import numpy
 #from playsound import playsound
 from PIL import Image,ImageDraw
 from torch import nn
-import pyworld as pw
+#import pyworld as pw
 import scipy.io
 from scipy.io.wavfile import read
 from scipy.interpolate  import interp1d
-from pocketsphinx import LiveSpeech
+#from pocketsphinx import LiveSpeech
 import subprocess
 import re
 import shutil
-import librosa
+#import librosa
 import soundfile
-import pyopenjtalk
+#import pyopenjtalk
 #from nnmnkwii.io import hts
 #import ttslearn
 import sounddevice as sd
@@ -1854,35 +1854,18 @@ class gui:
         detectedIds = pitchEditCanvas.find_overlapping(currentX,currentY,currentX,currentY)
         
         # デバッグ用確認表示
-        #print("detectedIds",detectedIds)
+        print("detectedIds",detectedIds)
 
         # todo"つねに"最前のタプルの要素に背景の四角形のIDがくる事を前提にしている　要修正
         currentNoteId = detectedIds[0]
-        
-        # 検出された現在のキャンバスIDから当該タグを調べる 
-        currentTagName = pitchEditCanvas.itemcget(currentNoteId,"tags")
-        
-        # たまにcurrentが含まれるときがあるので当該単語を削除
-        currentCleanedTagName = currentTagName.replace('current','')
-        
-        #print("Tag",currentCleanedTagName)
-        
-
-
+ 
         # 値をウィジェット変数に格納
-        currenNoteNumber.set(currentTagName)
+        currenNoteNumber.set(currentNoteId )
 
-                # 対応するBGの色を変更　タグとID共通の名前を持っている
-        application.changeBgColor(currentTagName,pitchEditCanvas)
-
-    def changeBgColor(self,currentTagName,pitchEditCanvas):
-
-        # たまにcurrentが含まれるときがあるので当該単語を削除
-        currentCleanedTagName = currentTagName.replace('current','')
-
-        print("id?",currentCleanedTagName)
-
-        pitchEditCanvas.itemconfig(119,fill = 'gray')
+  
+        # 対応するBGの色を変更
+        pitchEditCanvas.itemconfig(currentNoteId ,fill = 'gray')
+ 
 
     def drag(self,event,pitchEditCanvas,SCALEING_FACTOR):
 
@@ -1962,6 +1945,16 @@ class gui:
         # ダブルクリックされたらノートを削除（見た目だけ）するメソッド
         event.widget.delete(noteId)
 
+    def leaveCursolBG(self,event,pitchEditCanvas,tagName,recoveryColor):
+
+        # 確認表示
+        print("tagname" ,tagName," color ",recoveryColor)
+
+        # 該当するタグ名のキャンバスの色を元に戻す
+        pitchEditCanvas.itemconfig(tagName ,fill = recoveryColor)
+
+        pitchEditCanvas.update()
+
     def mainBG(self,pitchEditCanvas):
        
         SCALEING_FACTOR=2 
@@ -1969,121 +1962,172 @@ class gui:
         
         # 処理予定のmidi番号の最大値 + 1
         midiNumber = 120
-    
+        
         # 10オクターブ分(厳密にはノート番号０から１１９まで扱う)繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画 上から順番に描画している　2000は十分大きな数字ならなんでもよい
         # タグをnoteNumber"midiのノート番号"にする
         for index in numpy.arange(0,5 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
 
             # Bに相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("B",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1,tag = tagName)
+            tagName = "tag" + str(midiNumber)
 
+            # BG用長方形を描画
+            IdName = pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1,tag = tagName)
+  
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(tagName,"<Enter>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
             
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"))
+            #print("B tag",tagName," ID",IdName)
 
-
+            
             # Bbに相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("Bb",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR + index,2000,26 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            
+            # タグidは文字列なので数値を文字列に変換
+            tagName = "tag" +  str(midiNumber)
+            
+            # BG用長方形を描画
+            IdName = pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR + index,2000,26 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(tagName,"<Enter>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
+            #print("Bb tag",tagName," ID",IdName)
 
             # Aに相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("A",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR + index,2000,39 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
+            tagName = "tag" +  str(midiNumber)
+            #print("A tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR + index,2000,39 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(tagName,"<Enter>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
+            
+            
             # G#に相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("G#",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR + index,2000,52 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            tagName = "tag" +  str(midiNumber)
+            #print("G# tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR + index,2000,52 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(tagName,"<Enter>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
 
             # Gに相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("G",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR + index,2000,65 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
+            tagName = "tag" +  str(midiNumber)
+            #print("G tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR + index,2000,65 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(tagName,"<Enter>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
+
 
             # F#に相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("F#",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR + index,2000,78 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            tagName =  "tag" + str(midiNumber)
+            #print("F# tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR + index,2000,78 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(tagName,"<Enter>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
+
+
 
             # Fに相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("F",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR + index,2000,91 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
+            tagName =  "tag" + str(midiNumber)
+            #print("F tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR + index,2000,91 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(tagName,"<Enter>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
+
+
 
             # Eに相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("E",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,91 *SCALEING_FACTOR + index,2000, 104 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
+            tagName =  "tag" + str(midiNumber)
+            #print("E tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,91 *SCALEING_FACTOR + index,2000, 104 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(tagName,"<Enter>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
+
 
             # Ebに相当する領域について
             midiNumber = midiNumber - 1
-            tagName = str(midiNumber)
-            #print("Eb",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,104*SCALEING_FACTOR + index,2000,117 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            tagName =  "tag" + str(midiNumber)
+            #print("Eb tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,104*SCALEING_FACTOR + index,2000,117 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
+
 
             # Dに相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("D",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,117*SCALEING_FACTOR + index,2000,130 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
+            tagName =  "tag" + str(midiNumber)
+            #print("D tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,117*SCALEING_FACTOR + index,2000,130 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
+
 
             # C#に相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("C#",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,130*SCALEING_FACTOR + index,2000,143 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            tagName =  "tag" + str(midiNumber )
+            #print("C# tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,130*SCALEING_FACTOR + index,2000,143 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
+
 
             # Cに相当する領域について
             midiNumber = midiNumber - 1 
-            tagName = str(midiNumber)
-            #print("C",tagName)
-            tagName = pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
+            tagName =  "tag" + str(midiNumber)
+            #print("C tag",tagName," ID",IdName)
+            IdName = pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
  
             # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+        
+            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
+            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
+
+
+
         # 鍵盤数
         noteAmount = 88
 
@@ -2133,7 +2177,7 @@ class gui:
 
         # 小節数　todo みぢデータから割り出す必要あり
         BarAmount=10
-        '''
+        
         #右方向に向かってループする 小節区切り線の描画
         for index in numpy.arange(C,L + BarAmount * PX_PER_BAR + marginBar,PX_PER_BAR):
   
@@ -2141,11 +2185,11 @@ class gui:
             for index2 in numpy.arange(index,index + (L + BarAmount * PX_PER_BAR + marginBar),int(PX_PER_BAR / 4)):
                 
                 # 線を描画
-                pitchEditCanvas.create_line(index2,0,index2,5000,fill="gray",width=1)
+                pitchEditCanvas.create_line(index2,0,index2,5000,fill="gray",width=1,tag = "-1")
             
             # 線をひく 小節単位
-            pitchEditCanvas.create_line(index,0,index,5000,fill="black",width=4)#5000は十分大きさ数ならなんでもいい
-        '''
+            pitchEditCanvas.create_line(index,0,index,5000,fill="black",width=4,tag = "-1")#5000は十分大きさ数ならなんでもいい
+        
 
 
     def setPositionFromNotenumber(sele,noteNumber):
