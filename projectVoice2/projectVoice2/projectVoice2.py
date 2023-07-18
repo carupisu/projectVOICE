@@ -38,6 +38,8 @@ import tkinter.ttk as ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pickle
+from functools import partial
+
 ################################## 定数 #################################
 
 # gui関連
@@ -1826,26 +1828,17 @@ class gui:
     def noteScale():
         pass
 
-    def click(self,event):
+    def clickNote(self,event,pitchEditCanvas,idName,color):
 
         # ノート（を示す長方形が）がクリックされた時の処理
+        # 該当するタグ名のキャンバスの色に（ＩＤ指定で）
+        pitchEditCanvas.itemconfig(idName,fill = color)
+
         
-        global oldX,oldY
-        global selectedNoteFig
-        
-        # カーソルのｘ、ｙ座標を取得
-        currentX = event.x
-        currentY = event.y
+        print("On!Note! ",idName)
+        print("===============================")
+       
 
-        # クリック位置から一番違い図形ＩＤ取得
-        selectedNoteFig = pitchEditCanvas.find_closest(currentX,currentY,halo=3)
-
-        # 相対移動処理が終わったので現在のｘ、ｙ座標を１つ前時刻のｘ、ｙ座標として記録
-        oldX = currentX 
-        oldY = currentY
-
-    def callback(self,arg1,arg2,arg3):
-        print(arg1 + 'に'+arg3+'発生')
 
     def detectCurrentNote(self,event,pitchEditCanvas):
         
@@ -1855,25 +1848,33 @@ class gui:
         currentX = event.x
         currentY = event.y
 
-        # クリック位置から一番違い図形ＩＤ取得
+        # 空のリストを準備
+        detectedTags=[]
+
+        # クリック位置から一番近い図形ＩＤ取得
         detectedTags = [ pitchEditCanvas.itemcget(tmp,'tags') for tmp in pitchEditCanvas.find_overlapping(currentX,currentY,currentX,currentY)]
-        
+
         # 安全とスコープを広げるためにフラグ変数を偽に設定
         noteDetectedFlag = False
         bgDetectedFlag = False
         notCurrentFlag = False
-
+        
         # 安全とスコープを広げるために検出ID変数にNoneを設定した物を新規作成
-        detectedId = None
+        global detectedId
+        
         
         # デバッグ用確認表示
         #print("raw",detectedTags)
 
+
         # タプルの全要素についてスキャン
         for targetElemtnt in detectedTags:
             
+            #int型になって.findでエラーになることを防ぐ
+            targetElemtnt = str(targetElemtnt)
+
             # ノートが１つでも検知されているとき（つまりノートが優先される時）
-            if targetElemtnt.find('noteId') > -1:
+            if targetElemtnt.find('noteId'):
 
                 # 後の処理のために
                 noteDetectedFlag = True
@@ -1882,86 +1883,87 @@ class gui:
                 # tag文字列がふくまれる場合
 
 
-        # noteidが一つも検出されなかったらBGのみとして処理
+        # noteIdが一つも検出されなかったらBGのみとして処理
         if noteDetectedFlag == False:
 
             # 後処理のためにBGのみ検出フラグを立てる
             bgDetectedFlag = True
            
-           
-        # ノートに対する処理かBGにたいする処理かで分岐
-        if  bgDetectedFlag == True:
+        
+        # rawの内容が空かどうかチェック
+        if len(detectedTags) >0:
+        
+            # ノートに対する処理かBGにたいする処理かで分岐
+            if  bgDetectedFlag == True:
             
-            # BGについての処理
+                # BGについての処理
             
-            #print("BG検出")
+                #print("BG検出")
 
-            # currentが含まれるタプルが前から０始まりで何番目かを示すインデックス　マイナスはデフォルトで存在しないを意味
-            index = 0
 
-            # currentを含むインデックスを捜索
-            for targetElemtnt in detectedTags:
+                # currentを含むインデックスを捜索
+                for targetElemtnt in detectedTags:
                 
-                # currentを含むインデックス番号を取得
-                if 'current' in targetElemtnt:
+                    # currentを含むインデックス番号を取得
+                    if 'current' in targetElemtnt:
                
-                    #print("今考えている要素",targetElemtnt)
+                        #print("今考えている要素",targetElemtnt)
                     
-                    detectedId = targetElemtnt
-                    break
+                        detectedId = targetElemtnt
 
-            # 注意！　カーソルの位置によって実際に存在するのにcurrentが全くないタプルが渡される時があるがそのときはデフォルトのNoneになる
+                        break
+
+                # 注意！　カーソルの位置によって実際に存在するのにcurrentが全くないタプルが渡される時があるがそのときはデフォルトのNoneになる
             
-            #print("detecteID",detectedId)
+    
 
+            else:
+                pass
+            
+                # ノートに対する処理
+            
+                # currentが含まれるタプルが前から０始まりで何番目かを示すインデックス　マイナスはデフォルトで存在しないを意味
+                index = 0
+
+                # currentを含むインデックスを捜索
+                for targetElemtnt in detectedTags:
+                
+                    # currentを含むインデックス番号を取得
+                    if 'current' in targetElemtnt:
+               
+                        #print("今考えている要素",targetElemtnt)
+                    
+                        detectedId = targetElemtnt
+                        break
+
+                #print("ノート検出") 
+            
+
+            # 現在のID名に必ずcurrentが入っているのでそれを取り除く
+            detectedId = str(detectedId)
+            detectedId = detectedId.replace('current','')
+            detectedId = detectedId.replace('tag','')
+
+            # 値をウィジェット変数に格納
+            currenTargetId.set(detectedId)
+        
+            # 確認表示
+            #print("対象ID",currenTargetId.get())
         else:
 
-            # ノートに対する処理
+            # どのウィジェットにもマウスが載っていない事を明示的に示すためウィジェット変数に０格納
+            currenTargetId.set("0")
+            # 注意！　検出元タプルが空なら後続の処理のためににウィジェット変数を1以上にして保存してはならない！！！
 
-            # currentが含まれるタプルが前から０始まりで何番目かを示すインデックス　マイナスはデフォルトで存在しないを意味
-            index = 0
+    def dragNoteVerticcle(self,event,pitchEditCanvas,scalingFactor,idName):
 
-            # currentを含むインデックスを捜索
-            for targetElemtnt in detectedTags:
-                
-                # currentを含むインデックス番号を取得
-                if 'current' in targetElemtnt:
-               
-                    #print("今考えている要素",targetElemtnt)
-                    
-                    detectedId = targetElemtnt
-                    break
-
-            #print("ノート検出") 
-
-        # 現在のID名に必ずcurrentが入っているのでそれをのり除く
-        detectedId = str(detectedId)
-        detectedId = detectedId.replace('current','')
-        
-        # 値をウィジェット変数に格納
-        currenTargetId.set(detectedId)
-
-        # コールバックを自動的に実行するよう設定  
-        #currenTargetId.trace_add(('write'),application.callback)
-
-        # 確認表示
-        #print("対象タグ名",currenTargetId.get())
-
-    def drag(self,event,pitchEditCanvas,SCALEING_FACTOR):
-
-        global oldX,oldY
+        global oldY
         global oldCursolNotePosition
 
         # カーソルのｘ、ｙ座標を取得
-        currentX = event.x
         currentY = event.y
         
-        # クリック位置から一番違い図形ＩＤ取得
-        detectedIds = pitchEditCanvas.find_closest(currentX,currentY,currentX,currentY)
 
-        # todo"つねに"最前のタプルの要素に背景の四角形のIDがくる事を前提にしている　要修正
-        currentCursolNotePosition = detectedIds[0]
-        
                 
         # １ループ目で下記の変数が存在してない時newと同じ値を格納する
         if 'oldCursolNotePosition' in globals():
@@ -2003,308 +2005,280 @@ class gui:
         # 相対移動処理が終わったので現在のｘ、ｙ座標を１つ前時刻のｘ、ｙ座標として記録
         oldX = currentX 
         oldY = currentY
-
-
-
-
-    def recoveryBgColor():
-
-        # カーソルが離れたらBGの色を元に戻すメソッド
-        pass
-    
-    def tranceNote(self,event,pitchEditCanvas,afterNoteNumber, noteId,scalingFactorVertical):
+  
+    def tranceNoteDown(self,event,pitchEditCanvas,idName,scaleingFactor):
 
         # 全てのノートが初期値でノート番号１１９全音符1小節目にあるのでそこから移動させるメソッド
 
         # 白鍵黒鍵合わせた鍵盤単位の相対移動距離を整数で求める
-        relativeDistance = (119 - afterNoteNumber ) * 13 * scalingFactorVertical# 13は仮　todo 鍵盤配置が厳密にはオクターブで1ピクセルくらいずれてるのでここ
-        
+       
         print(noteId +relativeDistance)
         
         # 相対距離[px]を指定して移動
-        pitchEditCanvas.move(noteId,0,relativeDistance)
+        pitchEditCanvas.move(idName,0,30)
     
-    def doubleClicked(self,event,noteId):
+    def doubleClicked(self,event,idName):
 
         # ダブルクリックされたらノートを削除（見た目だけ）するメソッド
-        event.widget.delete(noteId)
+        event.widget.delete(idName)
 
-    def changeBgColor(self,event,pitchEditCanvas,color):
+    def changeBgColor(self,event,pitchEditCanvas,color,idName):
 
-        global tmp
-        tmp = currenTargetId.get();
+        #idName = tagName.replace("tag","")
 
-        print("今の値",tmp," type",type(tmp))
-        tmp = tmp.replace("tag","")
-        tmp = tmp.replace("noteId","")
-        tmp = tmp.replace("beatGrid","")
-        tmp = tmp.replace("mesureGrid","")
+        # 該当するタグ名のキャンバスの色に（ＩＤ指定で）
+        pitchEditCanvas.itemconfig(idName,fill = color)
 
-        print("3今の値",tmp)
-        if len(tmp) != 0 :
-            print("2今の値",tmp)
-
-
-            if tmp:
-       
-                #print("tag2:",tmp)
-                tmp = int(tmp)
-
-                print(tmp)
-                # 該当するタグ名のキャンバスの色に
-                pitchEditCanvas.itemconfig(tmp,fill = color)
         
-   
+        print("On!! ",idName)
+        print("===============================")
+       
+
+    def changeBgColor2(self,event,pitchEditCanvas,color,idName):
+
+      
+        #idName = tagName.replace("tag","")
+        print("Leave",idName)
+        print("=========================================")
+        # 元の色で再着色
+        pitchEditCanvas.itemconfig(idName,fill = color)
+
+
+
     def mainBG(self,pitchEditCanvas):
        
         SCALEING_FACTOR=2 
         scalingFactorVertical = SCALEING_FACTOR  #上の置き換えtodo　かつ上下方向のみのスケーリングパラメータ
         
-        # 処理予定のmidi番号の最大値 + 1
+        # 処理予定のmidi番号 IDの代わりに使用　だたしBGの領域を先に描画することで１，２，３とIDが続くことを前提にしているためここより前にpitchEditCanvasに図形を描画追加しないこと
         midiNumber = 0
     
         # 10オクターブ分(厳密にはノート番号０から１１９まで扱う)繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画 上から順番に描画している　2000は十分大きな数字ならなんでもよい
         # タグをnoteNumber"midiのノート番号"にする　idは１，２，３，とBG上になるとは限らない
-        for index in numpy.arange(0,5 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
+        for index in numpy.arange(0,4 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
 
             # Bに相当する領域について
-           
             midiNumber = midiNumber + 1 
+
+            # タグidは文字列なので数値を文字列に変換
             tagName = "tag" + str(midiNumber)
 
             # BG用長方形を描画
-            IdName = pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,0*SCALEING_FACTOR + index,2000,13 * SCALEING_FACTOR  + index),fill="gray31",width= 1,tag = tagName)
   
+
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            pitchEditCanvas.tag_bind(idName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
             
+
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
-             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray31'),add = '+')
-
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"))
-            #print("B tag",tagName," ID",IdName)
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
+            # BGの色を変更する関数を紐付け
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
+           
+            # デバッグ用確認表示
+            print("B tag",tagName," ID",idName)
+            
             
             # Bbに相当する領域について
+            
             midiNumber = midiNumber + 1 
             
             # タグidは文字列なので数値を文字列に変換
             tagName = "tag" +  str(midiNumber)
             
             # BG用長方形を描画
-            IdName = pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR + index,2000,26 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,13*SCALEING_FACTOR + index,2000,26 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray21'),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
+            # デバッグ用確認表示
             #print("Bb tag",tagName," ID",IdName)
 
+        
             # Aに相当する領域について
+            
             midiNumber = midiNumber + 1 
-            #tagName = "tag" +  str(midiNumber)
+
+            # タグidは文字列なので数値を文字列に変換
+            tagName = "tag" +  str(midiNumber)
+
+            # デバッグ用確認表示
             #print("A tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR + index,2000,39 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,26*SCALEING_FACTOR + index,2000,39 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
-            # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray31'),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
+            # BGの色を変更する関数を紐付け
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
             
-            
+           
             # G#に相当する領域について
             midiNumber = midiNumber + 1 
             tagName = "tag" +  str(midiNumber)
             #print("G# tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR + index,2000,52 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            idName = IdName = pitchEditCanvas.create_rectangle((0,39*SCALEING_FACTOR + index,2000,52 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray21'),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
-
+           
             # Gに相当する領域について
             midiNumber = midiNumber + 1 
             tagName = "tag" +  str(midiNumber)
             #print("G tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR + index,2000,65 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
+            idName = IdName = pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR + index,2000,65 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray31'),add = '+')
-
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
 
             # F#に相当する領域について
             midiNumber = midiNumber + 1 
             tagName =  "tag" + str(midiNumber)
             #print("F# tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR + index,2000,78 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR + index,2000,78 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray21'),add = '+')
-
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
-
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
 
             # Fに相当する領域について
             midiNumber = midiNumber + 1 
             tagName =  "tag" + str(midiNumber)
             #print("F tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR + index,2000,91 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,78*SCALEING_FACTOR + index,2000,91 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
-
-            #BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray31'),add = '+')
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
+            # BGの色を変更する関数を紐付け
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
+          
 
 
             # Eに相当する領域について
             midiNumber = midiNumber + 1 
             tagName =  "tag" + str(midiNumber)
             #print("E tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,91 *SCALEING_FACTOR + index,2000, 104 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,91 *SCALEING_FACTOR + index,2000, 104 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray31'),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
-
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
 
 
             # Ebに相当する領域について
             midiNumber = midiNumber + 1
             tagName =  "tag" + str(midiNumber)
             #print("Eb tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,104*SCALEING_FACTOR + index,2000,117 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,104*SCALEING_FACTOR + index,2000,117 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray21'),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
-
+           
 
             # Dに相当する領域について
             midiNumber = midiNumber + 1 
             tagName =  "tag" + str(midiNumber)
             #print("D tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,117*SCALEING_FACTOR + index,2000,130 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,117*SCALEING_FACTOR + index,2000,130 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray31'),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
-
+           
 
             # C#に相当する領域について
             midiNumber = midiNumber + 1 
             tagName =  "tag" + str(midiNumber )
             #print("C# tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,130*SCALEING_FACTOR + index,2000,143 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,130*SCALEING_FACTOR + index,2000,143 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
-
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray21'),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray21"),add ='+')
-
+           
 
             # Cに相当する領域について
             midiNumber = midiNumber + 1 
             tagName =  "tag" + str(midiNumber)
             #print("C tag",tagName," ID",IdName)
-            IdName = pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
+            idName = pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
  
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
         
             # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray'),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
+          
+            # BGの色を変更する関数を紐付け
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
-           # BGの色を変更する関数を紐付け
-            pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event:application.changeBgColor(event,pitchEditCanvas,'gray31'),add = '+')
-
-            # マウスカーソルが離れた時に元の色に戻すための処理を紐付け
-            #pitchEditCanvas.tag_bind(tagName,"<Leave>",lambda event,tagName = tagName :application.leaveCursolBG(event,pitchEditCanvas,tagName,"gray31"),add ='+')
-
-            
-
+             
         # ノート数
-        noteAmount = 3
+        noteAmount = 1
 
         # 1小節を何ピクセルにするか定義[px]
         PX_PER_BAR = 400
@@ -2316,25 +2290,29 @@ class gui:
             noteId = "noteId" + str(index)
 
             # デフォルトでノート番号１１９に全音符に1小節から配置
-            notes = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag=noteId)
+            idName = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag='disactivated')
 
             
             # 描画した図形にイベント処理設定
-            #クリックした時の処理を紐づけ
-            pitchEditCanvas.tag_bind(noteId,"<ButtonPress-1>",application.click)
+            #クリックした時の処理を紐づけ (選択)
+            pitchEditCanvas.tag_bind(noteId,"<ButtonPress-1>",partial(application.clickNote,pitchEditCanvas = pitchEditCanvas,color = 'red',idName = idName))
             
             # ドラッグした時の処理を紐づけ（移動）
-            pitchEditCanvas.tag_bind(noteId,"<Button1-Motion>",lambda event:application.drag(event,pitchEditCanvas,SCALEING_FACTOR))
+           # pitchEditCanvas.tag_bind(noteId,"<Button1-Motion>",partial(application.dragNoteVerticcle,pitchEditCanvas = pitchEditCanvas,scalingFactor = scalingFactor),add = '+')
 
             # ダブルクリックした時の処理を紐づけ（削除）
-            pitchEditCanvas.tag_bind(noteId,"<Double-ButtonPress-1>",lambda event : application.doubleClicked(event,noteId))
+            pitchEditCanvas.tag_bind(noteId,"<ButtonPress-3>",partial(application.doubleClicked,idName = idName),add = '+')
        
-            # 下矢印で１つノートを移動させる紐づけ（移動）toodo
-            pitchEditCanvas.tag_bind(noteId,"<KeyPress-Down>",lambda event : application.tranceNote(event,pitchEditCanvas,117,noteId,scalingFactorVertical))
+            # 下矢印で１つノートを移動させる紐づけ（移動）
+            pitchEditCanvas.tag_bind(noteId,"<KeyPress-Down>",partial(application.tranceNoteDown,pitchEditCanvas = pitchEditCanvas,idName = idName,scaleingFactor = SCALEING_FACTOR),add = '+')
             
             
-            # マウスオーバーした時にウィジェット変数を更新する処理を紐づけ
-            pitchEditCanvas.tag_bind(noteId,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
+            # BGの色を変更する関数を紐付け
+            pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'blue',idName = idName),add = '+')
+          
+            # BGの色を変更する関数を紐付け
+            pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'DeepSkyBlue2',idName = idName),add = '+')
+
             # テスト１移動
         #application.tranceNote(pitchEditCanvas,118,"noteId" + str(0),scalingFactorVertical)
         # 縦線を描画するメソッド
@@ -2529,7 +2507,7 @@ midi = midi()
 # ウィジェット変数を定義
 # midiデータ中の選択されたトラック（０からカウント）を格納するウィジェット変数を定義
 selectedTruck = tkinter.IntVar()
-currenTargetId = tkinter.StringVar()
+currenTargetId = tkinter.StringVar(value=0)
 
 # スナップの間隔をintで格納するウィジェット変数を定義
 snapAmount = tkinter.IntVar()
