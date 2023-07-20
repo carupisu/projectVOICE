@@ -58,7 +58,9 @@ MAX_VEROCITY = 127      # ０からカウントのベロシティーの最大値
 # ピアノロール関係
 L=80
 C = L*1.8
-
+        
+global PX_PER_BAR
+PX_PER_BAR = 400# 1小節を何ピクセルにするか定義[px]
 # グリッド線関連
 VERTICAL_LENGTH = 2000      #[px]垂直線のグリッドの長さ
 VERTICAL_GRID_SPACE = 300   #[px]垂直線のグリッドの間隔
@@ -1272,7 +1274,7 @@ class gui:
         mainFrame.grid_rowconfigure(0,weight = 1)
 
         # ピッチ編集部のキャンバスを作成
-        pitchEditCanvas = tkinter.Canvas(mainFrame,width = 100,height=1100,bg = "white",bd = 0,relief = 'flat',scrollregion =(0,0,1600,1000))
+        pitchEditCanvas = tkinter.Canvas(mainFrame,width = 100,height=1100,bg = "white",bd = 0,relief = 'flat',scrollregion =(0,0,1600,1000),highlightthickness = 0)
 
         # ピッチ編集部キャンバスを配置
         pitchEditCanvas.grid(row =0 ,column = 0,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
@@ -1318,7 +1320,7 @@ class gui:
         paramatorFrame = tkinter.Frame(application.window,bg = "gray",bd = 2,height=100)
 
         # フレームはスクロール出来ないので内側にキャンバスを作成(パラメタキャンバスと呼称)
-        paramCanvas = tkinter.Canvas(paramatorFrame,bg = 'gray10',relief = 'flat', bd = 1)
+        paramCanvas = tkinter.Canvas(paramatorFrame,bg = 'gray10',relief = 'flat', bd = 1,highlightthickness=0)
 
         # パラメタキャンバスを配置
         paramCanvas.grid(row = 0,column = 0,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
@@ -1420,6 +1422,9 @@ class gui:
         # 拍子の設定用コンボボックスの作成
         beatTypeCombo = ttk.Combobox(operateFrame,width=6,height=1,values = beatTyopes)
 
+
+   
+
         # 拍の種類のコンボボックスを配置
         beatTypeCombo.grid(row=3,column=0)
 
@@ -1430,10 +1435,13 @@ class gui:
         snapIntervalLabel.grid(row=4,column=0)
 
         # スナップの粗さを示すリストを定義
-        snapTyopes = ("４分音符","８分音符","１６音符","３２分音符","フリー")
+        snapTyopes = ("4分音符","8分音符","16分音符","32分音符","フリー")
         
         # スナップ設定用コンボボックスの作成
-        snapTypeCombo = ttk.Combobox(operateFrame,width=10,height=3,values = snapTyopes,textvariable = snapAmount)
+        snapTypeCombo = ttk.Combobox(operateFrame,width=10,height=3,values = snapTyopes,textvariable = snapIntervas)
+
+        # コンボボックスの内容を紐づけするウィジェット変数に
+        snapTypeCombo.bind('<<ComboboxSelected>>',application.comboboxSelected)
 
         # スナップ設定用コンボボックスを配置
         snapTypeCombo.grid(row=5,column=0)
@@ -1827,18 +1835,34 @@ class gui:
         pass
     def noteScale():
         pass
+    def comboboxSelected(self,event):
+
+        # グリッドナップの間隔をウィジェット変数に格納するメソッド
+        tmp = snapIntervas.get()
+
+        if tmp != "フリー":
+            tmp = tmp.replace("分音符","")
+
+            snapInterval = int(tmp)
+        else:
+            snapInterval = 0
+
+        # ウィジェット変数に格納
+        cleanedSnapIntervas.set(snapInterval)
+
+        #確認表示デバッグ用
+        print(snapInterval)
 
     def clickNote(self,event,pitchEditCanvas,idName,color):
 
         # ノート（を示す長方形が）がクリックされた時の処理
+
         # 該当するタグ名のキャンバスの色に（ＩＤ指定で）
         pitchEditCanvas.itemconfig(idName,fill = color)
-
         
-        print("On!Note! ",idName)
-        print("===============================")
-       
-
+        #print("selected Note! ",idName)
+        #print("===============================")
+  
 
     def detectCurrentNote(self,event,pitchEditCanvas):
         
@@ -1957,70 +1981,75 @@ class gui:
 
     def dragNoteVerticcle(self,event,pitchEditCanvas,scalingFactor,idName):
 
-        global oldY
-        global oldCursolNotePosition
+        # グローバル変数として現在と₁ステップ前のカーソル座標を保存する変数を定義
+        global currentY
+        global currentX
+
 
         # カーソルのｘ、ｙ座標を取得
         currentY = event.y
+        currentX = event.x
+
+        # すべてのBGにたいして総なめの処理 BGが最初に描画され1.2.3....とIDが続くこと前提
+        for index in numpy.arange(1,30,1):#30は仮todo
+
+            # デバッグ用確認表示　各図形の四隅座標を示す
+            #print("i",index ," cood",pitchEditCanvas.coords(index))
+
+            # 各図形の上下方向の中心とマウスの縦軸値の相対的なずれを計算
+            relativeDifference = int(abs(pitchEditCanvas.coords(index)[1] + ((pitchEditCanvas.coords(index)[3] - pitchEditCanvas.coords(index)[1]) / 2)  - currentY))
+            #print("カーソルｙ",currentY,"縦方向に位置差",relativeDifference)
+
+            # 相対的なずれがない物を探す　１．５は上の式で割り切れない値が発生した時に備える１付近の甘い数値である事
+            if relativeDifference == 0:
+                #print("jump to",index)
+
+                # 検出した先のidへ図形を移動させる
+                application.moveNoteOne(pitchEditCanvas,idName,index) 
+                
+                break
+        print("before",pitchEditCanvas.coords(idName)[0] )
+        print("drag move")
+        print("=====================================")
+    def changeCursreType():
+
+        #ノートの左端と右端のあるピクセル数にカーソルが近づいたらカーソルタイプを変更するメソッド
+        pass
+    def moveNoteOne(self,pitchEditCanvas,idName,targetId):
+
+        # 1つだけノートを移動させる関数
+
+        # 移動先のy座標を計算
+        moveToCoordinateY = pitchEditCanvas.coords(targetId)[1]
+
+        #print("afterX",pitchEditCanvas.coords(idName)[0])
         
-
-                
-        # １ループ目で下記の変数が存在してない時newと同じ値を格納する
-        if 'oldCursolNotePosition' in globals():
-            
-            # 1ステップ以降でoldCursolNotePositionに値が入っているるとき
-            
-            #print("+new",currentCursolNotePosition ," old:", oldCursolNotePosition)
-
-            # 現在のノート位置が前回と異なった瞬間をとらえる
-            if oldCursolNotePosition != currentCursolNotePosition:
-                print("change to")
-                # todo 自信ない注意！背景のグレーが”かならず常に”検出されたタプルの最初の要素になることを前提にしている
-
-                # 更新に備えて今のカーソルがいるノートのID（midiのノートではない）を更新
-                oldCursolNotePosition = currentCursolNotePosition
-
-                # if オクターブを超えるなら値を補正todo
-                print("ｙ移動距離",13 * SCALEING_FACTOR)
-
-                # 図形の相対移動 todo ｘ方向のスナップ機能まだ
-                #pitchEditCanvas.move(selectedNoteFig,currentX - oldX,oldY - 13 * SCALEING_FACTOR)
-                
-                
-                
-                #tranceNote(pitchEditCanvas,afterNoteNumber, noteId,changeToNote,scalingFactorVertical)
-
-        else:
-
-            #oldCursolNotePositionが存在しない時 カーソルが別ノートになる
-
-            oldCursolNotePosition = 0
-            #print("new",currentCursolNotePosition ," old:",oldCursolNotePosition)
-
-            # 値を更新する為に新しい値を古い値として保存
-            oldCursolNotePosition = currentCursolNotePosition
+        # ノートの移動 todo-1は補正値なぜだか必要ずれる
+        pitchEditCanvas.moveto(idName,pitchEditCanvas.coords(idName)[0] - 1,moveToCoordinateY)
 
 
+    def moveNoteDown(self,event,pitchEditCanvas,idName,scaleingFactor):
 
-        # 相対移動処理が終わったので現在のｘ、ｙ座標を１つ前時刻のｘ、ｙ座標として記録
-        oldX = currentX 
-        oldY = currentY
-  
-    def tranceNoteDown(self,event,pitchEditCanvas,idName,scaleingFactor):
-
-        # 全てのノートが初期値でノート番号１１９全音符1小節目にあるのでそこから移動させるメソッド
-
-        # 白鍵黒鍵合わせた鍵盤単位の相対移動距離を整数で求める
-       
-        print(noteId +relativeDistance)
-        
+        #ノートを半音さげるメソッド（見た目だけ）
+        #     
         # 相対距離[px]を指定して移動
-        pitchEditCanvas.move(idName,0,30)
+        #pitchEditCanvas.move(idName,0,30)
+
+        targetTag = pitchEditCanvas.itemcget(idName,"tag")
+
+        print("該当ノートのタグ",targetTag)
+        # デバッグ用確認表示
+        print("note down")
+        print("===================================-")
     
-    def doubleClicked(self,event,idName):
+    def daleteNote(self,event,idName):
 
         # ダブルクリックされたらノートを削除（見た目だけ）するメソッド
         event.widget.delete(idName)
+
+        # デバッグ用確認表示
+        #print("Note daleted!!")
+        #print("====================================")
 
     def changeBgColor(self,event,pitchEditCanvas,color,idName):
 
@@ -2029,33 +2058,67 @@ class gui:
         # 該当するタグ名のキャンバスの色に（ＩＤ指定で）
         pitchEditCanvas.itemconfig(idName,fill = color)
 
-        
-        print("On!! ",idName)
-        print("===============================")
-       
+        #print("On!! ",idName)
+        #print("===============================")
 
     def changeBgColor2(self,event,pitchEditCanvas,color,idName):
 
-      
-        #idName = tagName.replace("tag","")
-        print("Leave",idName)
-        print("=========================================")
+        # カーソルがエリアから出た時に色を戻すメソッド
+        
+        #print("Leave",idName)
+        #print("=========================================")
+
         # 元の色で再着色
         pitchEditCanvas.itemconfig(idName,fill = color)
 
+    def changeCousor(self,event,pitchEditCanvas,idName):
 
+        detectMarginPx = 10
+        # グローバル変数として現在カーソル座標を保存する変数を定義
+        global currentX
+        global currentY
 
+        currentX = event.x
+        currentY = event.y
+
+        # 音符のバウンディングボックスを取得
+        boundingBox = pitchEditCanvas.bbox(idName)
+
+        # 右端の検出
+        if boundingBox[2] - currentX < detectMarginPx:
+            
+            pitchEditCanvas.config(cursor="sb_h_double_arrow")
+        # 左端の検出
+        elif currentX - boundingBox[0]  < detectMarginPx:
+            
+            pitchEditCanvas.config(cursor="sb_h_double_arrow")
+        else:
+            pitchEditCanvas.config(cursor="arrow")
+        # 現在のマウスカーソルを取得
+        
     def mainBG(self,pitchEditCanvas):
        
+        global PX_PER_BAR
+        global C
         SCALEING_FACTOR=2 
         scalingFactorVertical = SCALEING_FACTOR  #上の置き換えtodo　かつ上下方向のみのスケーリングパラメータ
         
         # 処理予定のmidi番号 IDの代わりに使用　だたしBGの領域を先に描画することで１，２，３とIDが続くことを前提にしているためここより前にpitchEditCanvasに図形を描画追加しないこと
         midiNumber = 0
     
-        # 10オクターブ分(厳密にはノート番号０から１１９まで扱う)繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画 上から順番に描画している　2000は十分大きな数字ならなんでもよい
-        # タグをnoteNumber"midiのノート番号"にする　idは１，２，３，とBG上になるとは限らない
-        for index in numpy.arange(0,4 * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
+        # 何オクターブ文BGを描画するか
+        KEY_OCTAVE_AMOUNT = 4
+         
+        # グローバルなウィジェット変数から現在のスナップ間隔を取得
+        #global snapIntervas
+        #snapIntervas = snapIntervas.set()
+        #print("現在のスナップ間隔は",snapIntervas)
+
+        # ノート数 　todoここでノートの数をカウントしておくこと　でないとぷれいばーのインデックスがずれる
+        noteAmount = 1
+        OCTAVE_KEYS = 12#1オクターブに鍵盤が何個存在するか
+        # 10   5オクターブ分(厳密にはノート番号０から??まで扱う)繰り返し描画横方向の帯を白鍵黒鍵に対応する形の色で描画 上から順番に描画している　2000は十分大きな数字ならなんでもよい
+        for index in numpy.arange(0,KEY_OCTAVE_AMOUNT * 150 * SCALEING_FACTOR,156 * SCALEING_FACTOR):   
 
             # Bに相当する領域について
             midiNumber = midiNumber + 1 
@@ -2078,8 +2141,12 @@ class gui:
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
            
             # デバッグ用確認表示
-            print("B tag",tagName," ID",idName)
+            #print("B tag",tagName," ID",idName)
             
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
+
             
             # Bbに相当する領域について
             
@@ -2103,6 +2170,10 @@ class gui:
             # デバッグ用確認表示
             #print("Bb tag",tagName," ID",IdName)
 
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
+
         
             # Aに相当する領域について
             
@@ -2125,7 +2196,10 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+
            
             # G#に相当する領域について
             midiNumber = midiNumber + 1 
@@ -2142,7 +2216,10 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
-           
+           # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
+
             # Gに相当する領域について
             midiNumber = midiNumber + 1 
             tagName = "tag" +  str(midiNumber)
@@ -2158,6 +2235,9 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
 
             # F#に相当する領域について
             midiNumber = midiNumber + 1 
@@ -2174,6 +2254,9 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
 
             # Fに相当する領域について
             midiNumber = midiNumber + 1 
@@ -2190,7 +2273,9 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
           
-
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
 
             # Eに相当する領域について
             midiNumber = midiNumber + 1 
@@ -2208,7 +2293,9 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
-
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
 
             # Ebに相当する領域について
             midiNumber = midiNumber + 1
@@ -2225,7 +2312,9 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
-           
+           # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
 
             # Dに相当する領域について
             midiNumber = midiNumber + 1 
@@ -2241,7 +2330,10 @@ class gui:
           
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
-
+            
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
            
 
             # C#に相当する領域について
@@ -2259,12 +2351,14 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray21',idName = idName),add = '+')
 
-           
+           # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
 
             # Cに相当する領域について
             midiNumber = midiNumber + 1 
             tagName =  "tag" + str(midiNumber)
-            #print("C tag",tagName," ID",IdName)
+            print("C tag",tagName," ID",IdName)
             idName = pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
  
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
@@ -2276,12 +2370,13 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'gray31',idName = idName),add = '+')
 
-             
-        # ノート数
-        noteAmount = 1
+            # プレイバーの位置更新用関数の紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
+            
 
-        # 1小節を何ピクセルにするか定義[px]
-        PX_PER_BAR = 400
+        # ノート数
+        
+        
 
         # 音符の数だけ長方形を描画  noteAmount仮
         for index in numpy.arange(0,noteAmount,1):
@@ -2290,21 +2385,21 @@ class gui:
             noteId = "noteId" + str(index)
 
             # デフォルトでノート番号１１９に全音符に1小節から配置
-            idName = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag='disactivated')
+            idName = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag=('disactivated','pitch'),width=0)
 
             
             # 描画した図形にイベント処理設定
             #クリックした時の処理を紐づけ (選択)
-            pitchEditCanvas.tag_bind(noteId,"<ButtonPress-1>",partial(application.clickNote,pitchEditCanvas = pitchEditCanvas,color = 'red',idName = idName))
+            pitchEditCanvas.tag_bind(idName,"<ButtonPress-1>",partial(application.clickNote,pitchEditCanvas = pitchEditCanvas,color = 'red',idName = idName))
             
             # ドラッグした時の処理を紐づけ（移動）
-           # pitchEditCanvas.tag_bind(noteId,"<Button1-Motion>",partial(application.dragNoteVerticcle,pitchEditCanvas = pitchEditCanvas,scalingFactor = scalingFactor),add = '+')
+            pitchEditCanvas.tag_bind(idName,"<Button1-Motion>",partial(application.dragNoteVerticcle,pitchEditCanvas = pitchEditCanvas,scalingFactor = scalingFactorVertical,idName = idName),add = '+')
 
-            # ダブルクリックした時の処理を紐づけ（削除）
-            pitchEditCanvas.tag_bind(noteId,"<ButtonPress-3>",partial(application.doubleClicked,idName = idName),add = '+')
+            # 右ダブルクリックした時の処理を紐づけ（削除）
+            pitchEditCanvas.tag_bind(idName,"<ButtonPress-3>",partial(application.daleteNote,idName = idName),add = '+')
        
-            # 下矢印で１つノートを移動させる紐づけ（移動）
-            pitchEditCanvas.tag_bind(noteId,"<KeyPress-Down>",partial(application.tranceNoteDown,pitchEditCanvas = pitchEditCanvas,idName = idName,scaleingFactor = SCALEING_FACTOR),add = '+')
+            # 下矢印で１つノートを移動させる紐づけ（移動）todo
+            pitchEditCanvas.tag_bind(idName,"<KeyPress-Down>",partial(application.moveNoteDown,pitchEditCanvas = pitchEditCanvas,idName = idName,scaleingFactor = scalingFactorVertical),add = '+')
             
             
             # BGの色を変更する関数を紐付け
@@ -2313,10 +2408,19 @@ class gui:
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Leave>",partial(application.changeBgColor2,pitchEditCanvas = pitchEditCanvas,color = 'DeepSkyBlue2',idName = idName),add = '+')
 
+            # ノートの左端と右端にカーソルが来てるときにカーソルを変更する関数を紐付け
+            pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.changeCousor,pitchEditCanvas = pitchEditCanvas,idName = idName),add = "+")
+            
+            # test
+            #pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName = idName),add = "+")
+            
             # テスト１移動
         #application.tranceNote(pitchEditCanvas,118,"noteId" + str(0),scalingFactorVertical)
         # 縦線を描画するメソッド
 
+         # マウスカーソルに合わせた縦線を描画
+        # 線を描画 50000は十分大きければなんでも良い数字      
+        pitchEditCanvas.create_line(200,0,200,5000,fill="white",width=3,tag = "playLine")
 
 
 
@@ -2343,15 +2447,66 @@ class gui:
             # 線をひく 小節単位
             pitchEditCanvas.create_line(index,0,index,5000,fill="black",width=4,tag = "mesureGrid")#5000は十分大きさ数ならなんでもいい
         
+        
+       
 
+    def drawPlayBar(self,event,pitchEditCanvas,idName):
 
-    def setPositionFromNotenumber(sele,noteNumber):
+        # マウスの位置のスナップ位置に応じて縦線を引くメソッド
 
-        # ノートナンバーを受け取ってディスプレイ（グリッド）上の座標を返すメソッド
-        pass
+        # 鍵盤の幅の変数をグローバル変数として使用
+        global C
+        # マウスのｘ座標を取得
+        currentX = event.x
 
+        # ウィジェット変数から現在設定されているスナップ間隔を取得
+        snapInterval = cleanedSnapIntervas.get()
+        
+        #print(snapInterval)
+        # スナップモードがフリーかそれ以外を０除算回避のために分岐
+        if snapInterval != 0:
 
+            # スナップモードがフリーモードでない時
 
+            # どの小節に含まれているかを計算 0除算を防ぐために０はじめでなく小節番号は１はじめとする
+            nearBar = int((currentX - C ) / PX_PER_BAR) + 1
+
+            # オクターブごとの違いをなくしてある小節線から何ピクセル離れているかを計算
+            relativeDistance = int((currentX - C ) % PX_PER_BAR)
+
+            # デバッグ用確認表示
+            print("含まれる小節番号",nearBar,"　左側の小節線からの距離",relativeDistance)
+            
+            # あるスナップへバーが移動するのに感知する範囲
+            snapRangePx = int(PX_PER_BAR / snapInterval)
+
+            #どの区間に含まれているかインデックスを計算
+            tmp1 = int((relativeDistance + snapRangePx/ 2) /snapRangePx)
+            
+            # 最近の区間からどの程度離れているかを計算
+            tmp2 = int(relativeDistance % snapRangePx )
+
+            print("感知範囲",snapRangePx," どの区間か",tmp1," 最近の区間からの距離",tmp2)
+
+            print("========================================")
+ 
+            # 描画ｘ座標の計算 4は補正値見た目で決定している
+            playBarPosX = C + (PX_PER_BAR * (nearBar - 1))  + tmp1 * snapRangePx - 4
+
+            # 線を描画 50000は十分大きければなんでも良い数字      
+            pitchEditCanvas.moveto(idName,playBarPosX,0)
+
+            # グリッドと重なると見えないので最前面へプレイバーを移動
+            pitchEditCanvas.lift(idName)
+
+        else:
+
+            # スナップモードがフリーモードの時
+            # 線を描画 50000は十分大きければなんでも良い数字      
+            pitchEditCanvas.moveto(idName,currentX,0)
+
+            # グリッドと重なると見えないので最前面へプレイバーを移動
+            pitchEditCanvas.lift(idName)
 
     def drawKeyboad(self,pitchEditCanvas):
 
@@ -2372,39 +2527,39 @@ class gui:
             #test = tkinter.Label(pitchEditCanvas,text=cPosition)
             #test.grid(row=0,column=0)
             # Dを描画
-            pitchEditCanvas.create_rectangle(0,int(112.5 * SCALEING_FACTOR * adjustFactor+ index),C,int(135 * SCALEING_FACTOR* adjustFactor + index),fill="azure",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(112.5 * SCALEING_FACTOR * adjustFactor+ index),C,int(135 * SCALEING_FACTOR* adjustFactor + index),fill="azure",width= 1)
 
             # Eを描画
-            pitchEditCanvas.create_rectangle(0,int(90 * SCALEING_FACTOR * adjustFactor + index),C,int(112.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(90 * SCALEING_FACTOR * adjustFactor + index),C,int(112.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Fを描画
-            pitchEditCanvas.create_rectangle(0,int(67.5 * SCALEING_FACTOR * adjustFactor + index),C,int(90 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(67.5 * SCALEING_FACTOR * adjustFactor + index),C,int(90 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Gを描画
-            pitchEditCanvas.create_rectangle(0,int(45 * SCALEING_FACTOR * adjustFactor + index),C,int(67.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(45 * SCALEING_FACTOR * adjustFactor + index),C,int(67.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Aを描画
-            pitchEditCanvas.create_rectangle(0,int(22.5 *SCALEING_FACTOR * adjustFactor + index),C,int(45 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(22.5 *SCALEING_FACTOR * adjustFactor + index),C,int(45 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Bを描画
-            pitchEditCanvas.create_rectangle(0,int(0 * SCALEING_FACTOR * adjustFactor + index),C,int(22.5* SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(0 * SCALEING_FACTOR * adjustFactor + index),C,int(22.5* SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # C#を描画
-            pitchEditCanvas.create_rectangle(0,int(130.5 * SCALEING_FACTOR * adjustFactor + index),L,int(144.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(130.5 * SCALEING_FACTOR * adjustFactor + index),L,int(144.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # D#を描画
-            pitchEditCanvas.create_rectangle(0,int(103.5 * SCALEING_FACTOR * adjustFactor + index),L,int(117.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(103.5 * SCALEING_FACTOR * adjustFactor + index),L,int(117.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # F#を描画
-            pitchEditCanvas.create_rectangle(0,int(64 * SCALEING_FACTOR * adjustFactor + index),L,int(78 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(64 * SCALEING_FACTOR * adjustFactor + index),L,int(78 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # G#を描画
-            pitchEditCanvas.create_rectangle(0,int(38 * SCALEING_FACTOR * adjustFactor + index),L,int(52 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(38 * SCALEING_FACTOR * adjustFactor + index),L,int(52 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
    
             # A#を描画
-            pitchEditCanvas.create_rectangle(0,int(12 * SCALEING_FACTOR * adjustFactor + index),L,int(26 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = pitchEditCanvas.create_rectangle(0,int(12 * SCALEING_FACTOR * adjustFactor + index),L,int(26 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
-          
+           
     def recordSound(self,applicationData,preprocessFrame):
        
         # 音声録音の時に呼び出されるイベントハンドラ
@@ -2491,9 +2646,9 @@ class gui:
         # 音声編集画面の描画
         application.drawSourceCreaterDisplay(applicationFormat,application,big)
 
+# 
+oldY =0
 
-
-# 音符を示す長方形をグローバル変数として定義
 
 # 本ソフトが内部データとして格納　保存するデータ形式を定義したインスタンスを生成 todo 危険なのでいつか修正したい
 applicationFormat= applicationDataFormat()
@@ -2508,6 +2663,8 @@ midi = midi()
 # midiデータ中の選択されたトラック（０からカウント）を格納するウィジェット変数を定義
 selectedTruck = tkinter.IntVar()
 currenTargetId = tkinter.StringVar(value=0)
+snapIntervas = tkinter.StringVar()
+cleanedSnapIntervas = tkinter.IntVar()
 
 # スナップの間隔をintで格納するウィジェット変数を定義
 snapAmount = tkinter.IntVar()
