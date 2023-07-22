@@ -6,6 +6,8 @@
 ############################### ファイルインポート ######################
 
 import os
+from struct import pack
+from types import DynamicClassAttribute
 from xml.dom import InvalidStateErr
 import torch
 import tkinter
@@ -890,7 +892,20 @@ class gui:
         # フレームないにラベルが来てもフレームのサイズが変わらないように設定
         self.window.propagate(False)
  
-   
+        # イベント処理
+        # BG部のマウスオーバーに応じて鍵盤部の色を変えるためにマウスが動くたびにイベントハンドラに値を送り続ける
+        #elf.window.bind("<Configure>",self.getWindowSize)
+
+    def getWindowSize(self,event):
+
+        # 現在のウィンドウサイズをウィジェット変数に保存するメソッド
+
+        print(self.window.winfo_height()," ",self.window.winfo_width())
+        
+        # ウィジェット変数に現在のウィンドウのサイズを保管
+        windowWidth.set(self.window.winfo_height())
+        windowHeight.set(self.window.winfo_width())
+
     def drawSoundEditDisplay(self,applicationFormat,application):
 
         # 画面全体を形作るフレームを作成
@@ -1126,12 +1141,7 @@ class gui:
             # モデル学習ボタンの配置
             export.grid(row=1,column=0)
 
-
             
-
-
-
-
 
             # 垂直のスクロールバーを作成
             ybar = tkinter.Scrollbar(dataFrame,orient=tkinter.VERTICAL,command = tableCanvas.yview)
@@ -1254,42 +1264,136 @@ class gui:
     def drawComposerDisplay(self,applicationFormat,application):
 
         ##############################################　楽曲クリエーター用画面 ####################################
-        global pitchEditCanvas
-        # 全体を包むフレームを作成
-        totalFrame = tkinter.Frame(application.window)
+        
+
+        # 全体を包むフレームを作成 
+        totalFrame = tkinter.Frame(application.window,bg='black')
 
         # 全体を包むフレームを画面いっぱいに表示
         totalFrame.grid(row=0,column=0,sticky="nsew")
+        
+        # メインエリア（key,pitch,パラメタの合体部分）のフレームを作成
+        mainFrame = tkinter.Frame(totalFrame,bg = 'orange')
 
-        # メインとパラメータ用パンウィンドウを作る
-        mainParamaterWindow = tkinter.PanedWindow(application.window,orient = tkinter.VERTICAL)
+        # メインエリアの描画
+        application.drawMainArea(mainFrame,totalFrame)
 
-        # ピッチ編集部とパラメタ編集部を含む部分のフレームを作成
-        mainFrame = tkinter.Frame(application.window,height=1100,bg = 'orange',bd = 0)
-       
-        # ピッチとパラメタが合わさった部分を列方向にめいいっぱいに広げる　
-        mainFrame.grid_columnconfigure(0,weight = 1)
+        # ツールエリア（右側）のフレームを作成
+        optionFrame = tkinter.Frame(application.window,width=WINDOW_WIDTH_PX * RATIO_MAIN_2_TOTAL_WIDTH ,height=WINDOW_HEIGHT_PX ,bg = "gray",bd = 2)
 
-        # ピッチとパラメタが合わさった部分を行方向にめいいっぱいに広げる　
-        mainFrame.grid_rowconfigure(0,weight = 1)
+        # ツールエリアの描画
+        application.drawToolsArea(optionFrame)
+
+
+    def drawMainArea(self,mainFrame,totalFrame):
+
+        # メインエリア中を描画するメソッド
+        
+        # メインのフレームを描画 
+        mainFrame.grid(row = 0,column = 0,sticky="nesw")
+
+        # ピッチ編集部のキャンバスの配置 めいいっぱいに広げる
+        totalFrame.grid_columnconfigure(0,weight = 1)
+        totalFrame.grid_rowconfigure(0,weight = 1)
+
+        # key,pitch vs パラメタのパンウィンドウを作る
+        keyPitchVsParametorWindow = tkinter.PanedWindow(mainFrame,orient = tkinter.VERTICAL,sashwidth=5)
+
+        # 鍵盤とピッチ操作部が合体したフレームを定義する
+        pitchAndKey = tkinter.Frame(keyPitchVsParametorWindow ,bg = "red",bd = 0,height=200)
+
+        # 鍵盤とピッチ操作部が合体した内容の描画
+        application.drawPitchAndKey(pitchAndKey,keyPitchVsParametorWindow)
+
+        # パラメータのフレームを作成
+        paramatorFrame = tkinter.Frame(keyPitchVsParametorWindow,bg = "green",bd = 0,height=200)
+     
+  
+        # パラーメータエリアの描画
+        application.drawParamatorArea(paramatorFrame)
+
+
+        # パンウィンドウにフレームを追加
+        keyPitchVsParametorWindow.add(pitchAndKey,height=600,stretch='always')
+        keyPitchVsParametorWindow.add(paramatorFrame,stretch='always')
+
+        # パンウィンドウを配置
+        keyPitchVsParametorWindow.grid(row=0,column=0,sticky=tkinter.NSEW)
+ 
+        # 描画位置の調整
+        mainFrame.columnconfigure(0,weight=1)
+        mainFrame.grid_rowconfigure(0,weight=1)
+        
+        
+    def drawPitchAndKey(self,pitchAndKey,keyPitchVsParametorWindow):
+
+        # pitchAndKeyをめいいっぱい描画領域を広げる
+        pitchAndKey.grid_columnconfigure(0,weight = 1)
+        pitchAndKey.grid_rowconfigure(0,weight = 1)
+
+        # key,pitch vs パラメタのパンウィンドウを作る
+        keyVsPitchWindow = tkinter.PanedWindow(pitchAndKey,orient = tkinter.HORIZONTAL,sashwidth=5,height=500)
+
+        # パンドウィンドウで使用するためにキーボードのキャンバスを書こうフレームを作成
+        keyFrame = tkinter.Frame(keyVsPitchWindow,bd = 0,bg='yellow')
+
+        # キーボード部のキャンバスを作成
+        keyCanvas= tkinter.Canvas(keyFrame,width = 200,height=2000,bd = 0,bg='yellow',relief = 'flat',highlightthickness = 0)
+        
+        # 鍵盤を含むキャンバスの描画
+        keyFrame.grid(row = 0,column = 0,sticky = tkinter.NS)
+        
+        # 鍵盤を描画
+        application.drawKeyboad(keyCanvas)
+
+        # ピッチ編集部のフレームを作成
+        pitchEditFrame = tkinter.Frame(keyVsPitchWindow,bg = "purple",bd = 0)
+        
+        # ピッチ編集部の描画
+        application.drawPitchEditArea(pitchEditFrame)
+
+        # パンウィンドウにフレームを追加
+        keyVsPitchWindow.add(keyFrame,stretch='never',width=300,minsize = C)
+        keyVsPitchWindow.add(pitchEditFrame,stretch='always',width=100)
+
+        # パンウィンドウを描画
+        keyVsPitchWindow.grid(column=0,row=0,sticky=tkinter.NSEW)
+
+    def detectMouceRotation(self,event,pitchEditCanvas):
+
+        # ピッチ編集部でのマウスホイールの回転量を取得し移動量をウィジェット変数に格納するメソッド
+        
+        if event.delta > 0:
+
+            pitchEditCanvas.yview_scroll(-1,'units')
+
+            # ウィジェット変数に格納
+            xScrollAmount.set(-1)
+        elif event.delta < 0:
+
+            pitchEditCanvas.yview_scroll(1,'units')
+            
+            # ウィジェット変数に格納
+            xScrollAmount.set(1)
+    def drawPitchEditArea(self,pitchEditFrame):
+
+        # ピッチ編集部を示すキャンバスを囲うふれーむの作成
+        pitchEditFrame.grid(row = 0,column = 0,sticky = "nesw")
+
+        # pitchAndKeyをめいいっぱい描画領域を広げる
+        pitchEditFrame.grid_columnconfigure(0,weight = 1)
+        pitchEditFrame.grid_rowconfigure(0,weight = 1)
+
 
         # ピッチ編集部のキャンバスを作成
-        pitchEditCanvas = tkinter.Canvas(mainFrame,width = 100,height=1100,bg = "white",bd = 0,relief = 'flat',scrollregion =(0,0,1600,1000),highlightthickness = 0)
+        pitchEditCanvas = tkinter.Canvas(pitchEditFrame,width = 100,height=500,bg = "purple",bd = 0,relief = 'flat',scrollregion =(0,0,1600,1000),highlightthickness = 1)
 
-        # ピッチ編集部キャンバスを配置
+        # ピッチ編集部キャンバスを配置　
         pitchEditCanvas.grid(row =0 ,column = 0,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
 
-        # ピッチ編集部のキャンバスの配置
-        mainParamaterWindow.grid_columnconfigure(0,weight = 1)
-        mainParamaterWindow.grid_rowconfigure(0,weight = 1)
-
-       
- 
-        #イベント処理の設定
-        #pitchEditCanvas.bind("<Enter>",self.startMidDrag)
-        #pitchEditCanvas.bind("<ButtonPress>",self.midDrag)
-        #pitchEditCanvas.bind("<ButtonRelease>",self.endMidDrag)
-
+        # ピッチ編集部でマウススクロール量を検出
+        pitchEditCanvas.bind("<MouseWheel>",lambda event:application.detectMouceRotation(event,pitchEditCanvas))
+        
         # ピッチ編集部の水平方向スクロールバーを作成
         pitchXbar = tkinter.Scrollbar(pitchEditCanvas,orient = tkinter.HORIZONTAL)
 
@@ -1316,12 +1420,35 @@ class gui:
         pitchEditCanvas.config(xscrollcommand = pitchXbar.set)
         pitchEditCanvas.config(yscrollcommand = pitchYbar.set)
    
-        # パラメータのフレームを作成
-        paramatorFrame = tkinter.Frame(application.window,bg = "gray",bd = 2,height=100)
+        # 背景を描画
+        application.mainBG(pitchEditCanvas)
 
+    def drawParamatorArea(self,paramatorFrame):
+
+        # パラメータ
         # フレームはスクロール出来ないので内側にキャンバスを作成(パラメタキャンバスと呼称)
-        paramCanvas = tkinter.Canvas(paramatorFrame,bg = 'gray10',relief = 'flat', bd = 1,highlightthickness=0)
+        paramCanvas = tkinter.Canvas(paramatorFrame,bg = 'purple',relief = 'flat', bd = 1,highlightthickness=0)
+        
+        # キャンバスを配置
+        paramCanvas.grid(row = 0,column = 0)
+        # ノートブックを作成
+        notebook = ttk.Notebook(paramCanvas,width = 500,height=100)
 
+        # tab1(ダイナミクス)用フレームを作成
+        dynamicsTab = tkinter.Frame(notebook)
+
+        # tab1をノートブックに追加
+        notebook.add(dynamicsTab,text="ダイナミクス")
+
+        # tab2(地声裏声)用フレームを作成
+        voiceTypeTab = tkinter.Frame(notebook)
+
+        # tab2をノートブックに追加
+        notebook.add(voiceTypeTab,text="地声-裏声")
+
+        # ノートブックを配置
+        notebook.grid(row = 0,column = 0)
+        '''
         # パラメタキャンバスを配置
         paramCanvas.grid(row = 0,column = 0,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
 
@@ -1348,23 +1475,9 @@ class gui:
 
         # 列方向にめいいっぱいに広げる　
         paramCanvas.grid_rowconfigure(0,weight = 1)
-
-
-
-        # メイン、パラメータウィンドウをパンドウィンドウに追加
-        mainParamaterWindow.add(mainFrame)
-        mainParamaterWindow.add(paramatorFrame)
-
-        # パンドウィンドウを配置
-        mainParamaterWindow.grid(row = 0,column = 0,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
-
-        # 全体を囲んでるパネルに対して列方向に自動高さ調節
-        application.window.grid_columnconfigure(0,weight=1)
-        application.window.grid_rowconfigure(0,weight=1)
-       
-        # 右側のフレームを作成
-        optionFrame = tkinter.Frame(application.window,width=WINDOW_WIDTH_PX * RATIO_MAIN_2_TOTAL_WIDTH ,height=WINDOW_HEIGHT_PX ,bg = "gray",bd = 2)
-
+        '''
+    def drawToolsArea(self,optionFrame):
+        
         # 右側のフレームを配置
         optionFrame.grid(row = 0,column = 1,rowspan = 2)
 
@@ -1496,26 +1609,6 @@ class gui:
         # 垂直方向のスクロールバーを作成
         ybar = tkinter.Scrollbar( application.window,orient = tkinter.VERTICAL)
 
-        # キャンバスの右に垂直方向スクロールバーを配置
-        #ybar.grid(row = 0,column = 1,sticky=tkinter.N + tkinter.S)
-
-        # スクロールバーのスライダーが動かされた時に実行する処理を設定
-        #xbar.config(command=mainCanvas.xview)
-        #ybar.config(command=mainCanvas.yview)
-
-        # キャンバススクロール時に実行する処理を設定
-        #mainCanvas.config(xscrollcommand=xbar.set)
-        #mainCanvas.config(yscrollcommand=ybar.set)
-
-        # 背景を描画
-        application.mainBG(pitchEditCanvas)
-
-        # グリッド線を描画
-        #application.drawGrid(pitchEditCanvas)
-
-
-        # 鍵盤を描画
-        application.drawKeyboad(pitchEditCanvas)
 
     def drawSourceCreaterDisplay(self,applicationFormat,application,big):
        
@@ -1838,8 +1931,11 @@ class gui:
     def comboboxSelected(self,event):
 
         # グリッドナップの間隔をウィジェット変数に格納するメソッド
+
+        # 現在選択されているスナップ間隔をしジェット変数で取得
         tmp = snapIntervas.get()
 
+        # フリーモードが選択されている時のみ別処理
         if tmp != "フリー":
             tmp = tmp.replace("分音符","")
 
@@ -2011,10 +2107,7 @@ class gui:
         print("before",pitchEditCanvas.coords(idName)[0] )
         print("drag move")
         print("=====================================")
-    def changeCursreType():
-
-        #ノートの左端と右端のあるピクセル数にカーソルが近づいたらカーソルタイプを変更するメソッド
-        pass
+ 
     def moveNoteOne(self,pitchEditCanvas,idName,targetId):
 
         # 1つだけノートを移動させる関数
@@ -2027,7 +2120,6 @@ class gui:
         # ノートの移動 todo-1は補正値なぜだか必要ずれる
         pitchEditCanvas.moveto(idName,pitchEditCanvas.coords(idName)[0] - 1,moveToCoordinateY)
 
-
     def moveNoteDown(self,event,pitchEditCanvas,idName,scaleingFactor):
 
         #ノートを半音さげるメソッド（見た目だけ）
@@ -2037,10 +2129,10 @@ class gui:
 
         targetTag = pitchEditCanvas.itemcget(idName,"tag")
 
-        print("該当ノートのタグ",targetTag)
+        #print("該当ノートのタグ",targetTag)
         # デバッグ用確認表示
-        print("note down")
-        print("===================================-")
+        #print("note down")
+        #print("===================================-")
     
     def daleteNote(self,event,idName):
 
@@ -2071,13 +2163,32 @@ class gui:
         # 元の色で再着色
         pitchEditCanvas.itemconfig(idName,fill = color)
 
+    def changeKeyColor(self,event,idName,pitchEditCanvas):
+
+        # BG上と同じ位置に相当する鍵盤の色を変更するメソッド
+
+        # 鍵盤の色を変える
+        pitchEditCanvas.itemconfig(idName,fill='red')
+
+        print("BG上のＩＤ",idName)
+        #ウィジェット変数から現在ＢＧ上でマウスオーバーされているidを取得
+        currentId = currenTargetId.get()
+
+        # 確認表示
+        print(currentId)
+
     def changeCousor(self,event,pitchEditCanvas,idName):
 
+        # ノートの端にマウスカーソルが来たらカーソルタイプを変更するメソッド
+
+        # 端から何ピクセルを検知範囲とするかを示す
         detectMarginPx = 10
+
         # グローバル変数として現在カーソル座標を保存する変数を定義
         global currentX
         global currentY
 
+        # 現在のマウスカーソルを取得
         currentX = event.x
         currentY = event.y
 
@@ -2088,13 +2199,16 @@ class gui:
         if boundingBox[2] - currentX < detectMarginPx:
             
             pitchEditCanvas.config(cursor="sb_h_double_arrow")
+
         # 左端の検出
         elif currentX - boundingBox[0]  < detectMarginPx:
             
             pitchEditCanvas.config(cursor="sb_h_double_arrow")
+
         else:
+
             pitchEditCanvas.config(cursor="arrow")
-        # 現在のマウスカーソルを取得
+
         
     def mainBG(self,pitchEditCanvas):
        
@@ -2146,7 +2260,7 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
-
+           
             
             # Bbに相当する領域について
             
@@ -2173,8 +2287,8 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+          
 
-        
             # Aに相当する領域について
             
             midiNumber = midiNumber + 1 
@@ -2199,6 +2313,7 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+          
 
            
             # G#に相当する領域について
@@ -2219,10 +2334,13 @@ class gui:
            # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+           
 
             # Gに相当する領域について
             midiNumber = midiNumber + 1 
+
             tagName = "tag" +  str(midiNumber)
+
             #print("G tag",tagName," ID",IdName)
             idName = IdName = pitchEditCanvas.create_rectangle((0,52*SCALEING_FACTOR + index,2000,65 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
 
@@ -2238,10 +2356,13 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+           
 
             # F#に相当する領域について
             midiNumber = midiNumber + 1 
+
             tagName =  "tag" + str(midiNumber)
+
             #print("F# tag",tagName," ID",IdName)
             idName = pitchEditCanvas.create_rectangle((0,65*SCALEING_FACTOR + index,2000,78 * SCALEING_FACTOR + index ),fill="gray21",width= 1,tag = tagName)
 
@@ -2257,6 +2378,7 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+           
 
             # Fに相当する領域について
             midiNumber = midiNumber + 1 
@@ -2276,6 +2398,7 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+         
 
             # Eに相当する領域について
             midiNumber = midiNumber + 1 
@@ -2286,7 +2409,6 @@ class gui:
             # マウスオーバーした時に対象BGのタグ名を返す関数を紐付け
             pitchEditCanvas.tag_bind(tagName,"<Motion>",lambda event:application.detectCurrentNote(event,pitchEditCanvas))
 
-
             # BGの色を変更する関数を紐付け
             pitchEditCanvas.tag_bind(idName,"<Enter>",partial(application.changeBgColor,pitchEditCanvas = pitchEditCanvas,color = 'gray',idName = idName),add = '+')
           
@@ -2296,6 +2418,7 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+           
 
             # Ebに相当する領域について
             midiNumber = midiNumber + 1
@@ -2315,9 +2438,11 @@ class gui:
            # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+          
 
             # Dに相当する領域について
             midiNumber = midiNumber + 1 
+
             tagName =  "tag" + str(midiNumber)
             #print("D tag",tagName," ID",IdName)
             idName = pitchEditCanvas.create_rectangle((0,117*SCALEING_FACTOR + index,2000,130 * SCALEING_FACTOR + index ),fill="gray31",width= 1,tag = tagName)
@@ -2334,7 +2459,7 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
-           
+        
 
             # C#に相当する領域について
             midiNumber = midiNumber + 1 
@@ -2354,10 +2479,13 @@ class gui:
            # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
+       
 
             # Cに相当する領域について
             midiNumber = midiNumber + 1 
+
             tagName =  "tag" + str(midiNumber)
+
             print("C tag",tagName," ID",IdName)
             idName = pitchEditCanvas.create_rectangle((0,143*SCALEING_FACTOR + index,2000, 157 * SCALEING_FACTOR + index),fill="gray31",width= 1,tag = tagName)
  
@@ -2373,9 +2501,7 @@ class gui:
             # プレイバーの位置更新用関数の紐付け
             pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.drawPlayBar,pitchEditCanvas = pitchEditCanvas,idName =KEY_OCTAVE_AMOUNT * OCTAVE_KEYS + noteAmount + 1),add = "+")
             
-
-        # ノート数
-        
+    
         
 
         # 音符の数だけ長方形を描画  noteAmount仮
@@ -2385,7 +2511,7 @@ class gui:
             noteId = "noteId" + str(index)
 
             # デフォルトでノート番号１１９に全音符に1小節から配置
-            idName = pitchEditCanvas.create_rectangle(0 + C,0*SCALEING_FACTOR,PX_PER_BAR + C,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag=('disactivated','pitch'),width=0)
+            idName = pitchEditCanvas.create_rectangle(0,0 * SCALEING_FACTOR,PX_PER_BAR,13 * SCALEING_FACTOR,fill="DeepSkyBlue2",tag=('disactivated','pitch'),width=0)
 
             
             # 描画した図形にイベント処理設定
@@ -2436,7 +2562,7 @@ class gui:
         BarAmount=10
         
         #右方向に向かってループする 小節区切り線の描画
-        for index in numpy.arange(C,L + BarAmount * PX_PER_BAR + marginBar,PX_PER_BAR):
+        for index in numpy.arange(0,L + BarAmount * PX_PER_BAR + marginBar,PX_PER_BAR):
   
             # 拍ごとの縦線を描画
             for index2 in numpy.arange(index,index + (L + BarAmount * PX_PER_BAR + marginBar),int(PX_PER_BAR / 4)):
@@ -2454,8 +2580,6 @@ class gui:
 
         # マウスの位置のスナップ位置に応じて縦線を引くメソッド
 
-        # 鍵盤の幅の変数をグローバル変数として使用
-        global C
         # マウスのｘ座標を取得
         currentX = event.x
 
@@ -2469,13 +2593,13 @@ class gui:
             # スナップモードがフリーモードでない時
 
             # どの小節に含まれているかを計算 0除算を防ぐために０はじめでなく小節番号は１はじめとする
-            nearBar = int((currentX - C ) / PX_PER_BAR) + 1
+            nearBar = int((currentX ) / PX_PER_BAR) + 1
 
             # オクターブごとの違いをなくしてある小節線から何ピクセル離れているかを計算
-            relativeDistance = int((currentX - C ) % PX_PER_BAR)
+            relativeDistance = int((currentX ) % PX_PER_BAR)
 
             # デバッグ用確認表示
-            print("含まれる小節番号",nearBar,"　左側の小節線からの距離",relativeDistance)
+            #print("含まれる小節番号",nearBar,"　左側の小節線からの距離",relativeDistance)
             
             # あるスナップへバーが移動するのに感知する範囲
             snapRangePx = int(PX_PER_BAR / snapInterval)
@@ -2486,14 +2610,14 @@ class gui:
             # 最近の区間からどの程度離れているかを計算
             tmp2 = int(relativeDistance % snapRangePx )
 
-            print("感知範囲",snapRangePx," どの区間か",tmp1," 最近の区間からの距離",tmp2)
+            #print("感知範囲",snapRangePx," どの区間か",tmp1," 最近の区間からの距離",tmp2)
 
-            print("========================================")
+            #print("========================================")
  
             # 描画ｘ座標の計算 4は補正値見た目で決定している
-            playBarPosX = C + (PX_PER_BAR * (nearBar - 1))  + tmp1 * snapRangePx - 4
+            playBarPosX = (PX_PER_BAR * (nearBar - 1))  + tmp1 * snapRangePx - 4
 
-            # 線を描画 50000は十分大きければなんでも良い数字      
+            # 線を描画 
             pitchEditCanvas.moveto(idName,playBarPosX,0)
 
             # グリッドと重なると見えないので最前面へプレイバーを移動
@@ -2502,64 +2626,84 @@ class gui:
         else:
 
             # スナップモードがフリーモードの時
-            # 線を描画 50000は十分大きければなんでも良い数字      
+            # 線を描画   
             pitchEditCanvas.moveto(idName,currentX,0)
 
             # グリッドと重なると見えないので最前面へプレイバーを移動
             pitchEditCanvas.lift(idName)
 
-    def drawKeyboad(self,pitchEditCanvas):
+    def drawKeyboad(self,keyCanvas):
 
        # 画面左の鍵盤を描画するメソッド
        
-  
+        # ピッチ編集部キャンバスを配置 
+        keyCanvas.grid(row =0 ,column = 0,sticky=tkinter.N + tkinter.S + tkinter.W + tkinter.E)
+
+        # todo 定数類
         SCALEING_FACTOR=2
         adjustFactor = 1
+        cNameDitance = 300
+
+        # Cの位置を国際基準で描画するためにオクターブ事に数値を変えるよう変数
+        cCount = 10
+        cNamePositionY = 800
 
         # 1オクターブずつ描画
         for index in numpy.arange(0,int(155 * SCALEING_FACTOR * 5),int(156 * SCALEING_FACTOR)):#本来は１６５ずつずらすが誤差蓄積(おそらく線の太さ)のため少し小さくしてい   
 
-            # Cを描画
-            pitchEditCanvas.create_rectangle(0,int(135 * SCALEING_FACTOR * adjustFactor+ index),C,int(156* SCALEING_FACTOR * adjustFactor+ index),fill="azure",width= 1)
 
-            # ドの位置を（yamaha基準でなく）国際基準で表示
-            #cPosition="1"
-            #test = tkinter.Label(pitchEditCanvas,text=cPosition)
-            #test.grid(row=0,column=0)
+            # ドの位にC3などの表示（yamaha基準でなく）国際基準で表示
+            cName="C" + str(cCount)
+            keyCanvas.create_text(130,cNamePositionY,text = cName)
+            
+
+            # Cを描画
+            keyCanvas.create_rectangle(0,int(135 * SCALEING_FACTOR * adjustFactor+ index),C,int(156* SCALEING_FACTOR * adjustFactor+ index),fill="azure",width= 1)
+
             # Dを描画
-            idName = pitchEditCanvas.create_rectangle(0,int(112.5 * SCALEING_FACTOR * adjustFactor+ index),C,int(135 * SCALEING_FACTOR* adjustFactor + index),fill="azure",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(112.5 * SCALEING_FACTOR * adjustFactor+ index),C,int(135 * SCALEING_FACTOR* adjustFactor + index),fill="azure",width= 1)
+
+             # 鍵盤部の色を変えるための関数を紐付け
+            #pitchEditCanvas.tag_bind(idName,"<Motion>",partial(application.changeKeyColor,idName = idName,pitchEditCanvas = pitchEditCanvas),add = '+')
+
 
             # Eを描画
-            idName = pitchEditCanvas.create_rectangle(0,int(90 * SCALEING_FACTOR * adjustFactor + index),C,int(112.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(90 * SCALEING_FACTOR * adjustFactor + index),C,int(112.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Fを描画
-            idName = pitchEditCanvas.create_rectangle(0,int(67.5 * SCALEING_FACTOR * adjustFactor + index),C,int(90 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(67.5 * SCALEING_FACTOR * adjustFactor + index),C,int(90 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Gを描画
-            idName = pitchEditCanvas.create_rectangle(0,int(45 * SCALEING_FACTOR * adjustFactor + index),C,int(67.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(45 * SCALEING_FACTOR * adjustFactor + index),C,int(67.5 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Aを描画
-            idName = pitchEditCanvas.create_rectangle(0,int(22.5 *SCALEING_FACTOR * adjustFactor + index),C,int(45 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(22.5 *SCALEING_FACTOR * adjustFactor + index),C,int(45 * SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # Bを描画
-            idName = pitchEditCanvas.create_rectangle(0,int(0 * SCALEING_FACTOR * adjustFactor + index),C,int(22.5* SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(0 * SCALEING_FACTOR * adjustFactor + index),C,int(22.5* SCALEING_FACTOR * adjustFactor + index),fill="azure",width= 1)
 
             # C#を描画
-            idName = pitchEditCanvas.create_rectangle(0,int(130.5 * SCALEING_FACTOR * adjustFactor + index),L,int(144.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(130.5 * SCALEING_FACTOR * adjustFactor + index),L,int(144.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # D#を描画
-            idName = pitchEditCanvas.create_rectangle(0,int(103.5 * SCALEING_FACTOR * adjustFactor + index),L,int(117.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(103.5 * SCALEING_FACTOR * adjustFactor + index),L,int(117.5 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # F#を描画
-            idName = pitchEditCanvas.create_rectangle(0,int(64 * SCALEING_FACTOR * adjustFactor + index),L,int(78 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(64 * SCALEING_FACTOR * adjustFactor + index),L,int(78 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
             # G#を描画
-            idName = pitchEditCanvas.create_rectangle(0,int(38 * SCALEING_FACTOR * adjustFactor + index),L,int(52 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(38 * SCALEING_FACTOR * adjustFactor + index),L,int(52 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
    
             # A#を描画
-            idName = pitchEditCanvas.create_rectangle(0,int(12 * SCALEING_FACTOR * adjustFactor + index),L,int(26 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
+            idName = keyCanvas.create_rectangle(0,int(12 * SCALEING_FACTOR * adjustFactor + index),L,int(26 * SCALEING_FACTOR * adjustFactor + index),fill="black",width= 1)
 
            
+            # 次の下のオクターブのためにＣの数字をディクリメント
+            cCount = cCount - 1
+
+            # C○の文字の位置はオクターブ分下げる
+            cNamePositionY = cNamePositionY + cNameDitance
+
     def recordSound(self,applicationData,preprocessFrame):
        
         # 音声録音の時に呼び出されるイベントハンドラ
@@ -2660,14 +2804,14 @@ application = gui()
 midi = midi()
 
 # ウィジェット変数を定義
-# midiデータ中の選択されたトラック（０からカウント）を格納するウィジェット変数を定義
-selectedTruck = tkinter.IntVar()
+selectedTruck = tkinter.IntVar()        # midiデータ中の選択されたトラック（０からカウント）を格納するウィジェット変数を定義
 currenTargetId = tkinter.StringVar(value=0)
 snapIntervas = tkinter.StringVar()
 cleanedSnapIntervas = tkinter.IntVar()
-
-# スナップの間隔をintで格納するウィジェット変数を定義
-snapAmount = tkinter.IntVar()
+windowWidth = tkinter.IntVar()          # ウィンドウ幅
+windowHeight = tkinter.IntVar()         # ウィンドウ高さ
+snapAmount = tkinter.IntVar()           # スナップの間隔
+xScrollAmount = tkinter.IntVar()        # BGとパラメタ部を連動させたりＢＧ部のプレイバーの位置を正しくするために保存するスクロール量
 
 # 使用フォントを定義
 big =ft.Font(size=20)
@@ -2686,6 +2830,10 @@ application.drawSoundEditDisplay(applicationFormat,application)
 
 # 作曲者モードの表示
 application.drawComposerDisplay(applicationFormat,application)
+
+# 全体を囲んでるパネルに対して列方向に自動高さ調節
+application.window.grid_columnconfigure(0,weight=1)
+application.window.grid_rowconfigure(0,weight=1)
 
 # イベントループ
 tkinter.mainloop()
